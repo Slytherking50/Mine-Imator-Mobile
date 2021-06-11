@@ -1,7 +1,7 @@
 {
-	"version": "1.16.1",
+	"version": "1.17",
 	"patch": 0,
-	"format": 5,
+	"format": 6,
 	"characters": [
 		{
 			"name": "human",
@@ -141,7 +141,13 @@
 		},
 		{
 			"name": "squid",
-			"file": "squid.mimodel"
+			"states": {
+				"variant": [
+					{ "value": "squid", "file": "squid.mimodel" },
+					{ "value": "glow_squid", "file": "glow_squid.mimodel" }
+				]
+			},
+			"default_state": "variant=squid"
 		},
 		{
 			"name": "cat",
@@ -348,8 +354,8 @@
 			"file": "vex.mimodel",
 			"states": {
 				"charging": [
-					{ "value": "true", "texture": "entity/illager/vex_charging" },
-					{ "value": "false", "texture": "entity/illager/vex" }
+					{ "value": "false", "texture": "entity/illager/vex" },
+					{ "value": "true", "texture": "entity/illager/vex_charging" }
 				]
 			},
 			"default_state": "charging=false"
@@ -502,8 +508,8 @@
 			"name": "turtle",
 			"states": {
 				"has_egg": [
-					{ "value": "false", "file": "turtle.mimodel"},
-					{ "value": "true", "file": "turtle_has_egg.mimodel"}
+					{ "value": "false", "file": "turtle.mimodel" },
+					{ "value": "true", "file": "turtle_has_egg.mimodel" }
 				]
 			},
 			"default_state": "has_egg=false"
@@ -647,6 +653,7 @@
 			"states": {
 				"variant": [
 					{ "value": "normal", "file": "piglin.mimodel" },
+					{ "value": "brute", "file": "piglin.mimodel", "texture": "entity/piglin/piglin_brute" },
 					{ "value": "zombified", "file": "zombified_piglin.mimodel" }
 				]
 			},
@@ -676,6 +683,24 @@
 				]
 			},
 			"default_state": "cold=false,saddle=false"
+		},
+		{
+			"name": "axolotl",
+			"file": "axolotl.mimodel",
+			"states": {
+				"variant": [
+					{ "value": "lucy", "texture": "entity/axolotl/axolotl_lucy"},
+					{ "value": "wild", "texture": "entity/axolotl/axolotl_wild"},
+					{ "value": "gold", "texture": "entity/axolotl/axolotl_gold"},
+					{ "value": "cyan", "texture": "entity/axolotl/axolotl_cyan"},
+					{ "value": "blue", "texture": "entity/axolotl/axolotl_blue"}
+				]
+			},
+			"default_state": "variant=lucy"
+		},
+		{
+			"name": "goat",
+			"file": "goat.mimodel"
 		}
 	],
 	"special_blocks": [
@@ -732,15 +757,84 @@
 		},
 		{
 			"name": "arrow",
-			"file": "arrow.mimodel"
+			"file": "arrow.mimodel",
+			"states": {
+				"variant": [
+					{ "value": "normal", "texture": "entity/projectiles/arrow" },
+					{ "value": "spectral", "texture": "entity/projectiles/spectral_arrow" },
+					{ "value": "tipped", "texture": "entity/projectiles/tipped_arrow" }
+				]
+			},
+			"default_state": "variant=normal"
 		},
 		{
 			"name": "shield",
 			"file": "shield.mimodel"
 		},
 		{
+			"name": "spyglass",
+			"file": "spyglass.mimodel"
+		},
+		{
+			"name": "cape",
+			"file": "cape.mimodel",
+			"states": {
+				"variant": [
+					{ "value": "mojang", "texture": "entity/mineimator/cape_mojang" },
+					{ "value": "mojang_old", "texture": "entity/mineimator/cape_mojang_old" },
+					{ "value": "minecon_2011", "texture": "entity/mineimator/cape_minecon2011" },
+					{ "value": "minecon_2012", "texture": "entity/mineimator/cape_minecon2012" },
+					{ "value": "minecon_2013", "texture": "entity/mineimator/cape_minecon2013" },
+					{ "value": "minecon_2015", "texture": "entity/mineimator/cape_minecon2015" },
+					{ "value": "minecon_2016", "texture": "entity/mineimator/cape_minecon2016" },
+					{ "value": "translator", "texture": "entity/mineimator/cape_translator" },
+					{ "value": "translator_chinese", "texture": "entity/mineimator/cape_translator_chinese" },
+					{ "value": "scrolls_champion", "texture": "entity/mineimator/cape_scrollschamp" },
+					{ "value": "cobalt", "texture": "entity/mineimator/cape_cobalt" },
+					{ "value": "moderator", "texture": "entity/mineimator/cape_moderator" },
+					{ "value": "mapmaker", "texture": "entity/mineimator/cape_mapmaker" },
+					{ "value": "millionthsale", "texture": "entity/mineimator/cape_millionthsale" },
+					{ "value": "dannybstyle", "texture": "entity/mineimator/cape_dannybstyle" },
+					{ "value": "julianclark", "texture": "entity/mineimator/cape_julianclark" },
+					{ "value": "cheapsh0t", "texture": "entity/mineimator/cape_cheapsh0t" },
+					{ "value": "mrmessiah", "texture": "entity/mineimator/cape_mrmessiah" },
+					{ "value": "prismarine", "texture": "entity/mineimator/cape_prismarine" },
+					{ "value": "turtle", "texture": "entity/mineimator/cape_turtle" },
+					{ "value": "birthday", "texture": "entity/mineimator/cape_birthday" }
+				]
+			},
+			"default_state": "variant=mojang"
+		},
+		{
 			"name": "elytra",
-			"file": "elytra.mimodel"
+			"file": "elytra.mimodel",
+			"states": {
+				"variant": [
+					{ "value": "normal", "texture": "entity/elytra" },
+					{ "value": "mojang", "texture": "entity/mineimator/cape_mojang" },
+					{ "value": "mojang_old", "texture": "entity/mineimator/cape_mojang_old" },
+					{ "value": "minecon_2011", "texture": "entity/mineimator/cape_minecon2011" },
+					{ "value": "minecon_2012", "texture": "entity/mineimator/cape_minecon2012" },
+					{ "value": "minecon_2013", "texture": "entity/mineimator/cape_minecon2013" },
+					{ "value": "minecon_2015", "texture": "entity/mineimator/cape_minecon2015" },
+					{ "value": "minecon_2016", "texture": "entity/mineimator/cape_minecon2016" },
+					{ "value": "translator", "texture": "entity/mineimator/cape_translator" },
+					{ "value": "translator_chinese", "texture": "entity/mineimator/cape_translator_chinese" },
+					{ "value": "scrolls_champion", "texture": "entity/mineimator/cape_scrollschamp" },
+					{ "value": "cobalt", "texture": "entity/mineimator/cape_cobalt" },
+					{ "value": "moderator", "texture": "entity/mineimator/cape_moderator" },
+					{ "value": "mapmaker", "texture": "entity/mineimator/cape_mapmaker" },
+					{ "value": "millionthsale", "texture": "entity/mineimator/cape_millionthsale" },
+					{ "value": "dannybstyle", "texture": "entity/mineimator/cape_dannybstyle" },
+					{ "value": "julianclark", "texture": "entity/mineimator/cape_julianclark" },
+					{ "value": "cheapsh0t", "texture": "entity/mineimator/cape_cheapsh0t" },
+					{ "value": "mrmessiah", "texture": "entity/mineimator/cape_mrmessiah" },
+					{ "value": "prismarine", "texture": "entity/mineimator/cape_prismarine" },
+					{ "value": "turtle", "texture": "entity/mineimator/cape_turtle" },
+					{ "value": "birthday", "texture": "entity/mineimator/cape_birthday" }
+				]
+			},
+			"default_state": "variant=normal"
 		},
 		{
 			"name": "boat",
@@ -766,8 +860,8 @@
 			"file": "tripwire_hook.mimodel"
 		},
 		{
-			"name": "enchantment_table",
-			"file": "enchantment_table.mimodel"
+			"name": "book",
+			"file": "book.mimodel"
 		},
 		{
 			"name": "end_crystal",
@@ -789,8 +883,8 @@
 			"file": "armor_stand.mimodel",
 			"states": {
 				"arms": [
-					{ "value": "true" },
-					{ "value": "false", "hide": [ "right_arm", "left_arm" ] }
+					{ "value": "false", "hide": [ "right_arm", "left_arm" ] },
+					{ "value": "true" }
 				]
 			},
 			"default_state": "arms=false"
@@ -858,15 +952,46 @@
 			"name": "conduit",
 			"states": {
 				"open": [
-					{ "value": "true", "file": "conduit_open.mimodel" },
-					{ "value": "false", "file": "conduit.mimodel" }
+					{ "value": "false", "file": "conduit.mimodel" },
+					{ "value": "true", "file": "conduit_open.mimodel" }
+				],
+				"targeting": [
+					{ "value": "false" },
+					{ "value": "true", "shape_texture": { "center": "entity/conduit/open_eye" } }
 				]
 			},
-			"default_state": "open=true"
+			"default_state": "open=true,targeting=false"
 		},
 		{
 			"name": "bell",
 			"file": "bell.mimodel"
+		},
+		{
+			"name": "mob_head",
+			"states": {
+				"type": [
+					{ "value": "ground", "file": "mob_head.mimodel" },
+					{ "value": "wall", "file": "mob_wall_head.mimodel" }
+				],
+				"character": [
+					{ "value": "skeleton", "texture": "entity/skeleton/skeleton" },
+					{ "value": "wither_skeleton", "texture": "entity/skeleton/wither_skeleton" },
+					{ "value": "human", "texture": "entity/steve" },
+					{ "value": "zombie", "texture": "entity/zombie/zombie" },
+					{ "value": "creeper", "texture": "entity/creeper/creeper" }
+				]
+			},
+			"default_state": "type=ground,character=human"
+		},
+		{
+			"name": "dragon_head",
+			"states": {
+				"type": [
+					{ "value": "ground", "file": "dragon_head.mimodel" },
+					{ "value": "wall", "file": "dragon_wall_head.mimodel" }
+				]
+			},
+			"default_state": "type=ground"
 		},
 		{
 			"name": "camera",
@@ -918,14 +1043,16 @@
 				"variant": [
 					{ "value": "dirt", "file": "dirt.json" },
 					{ "value": "coarse_dirt", "file": "coarse_dirt.json" },
-					{ "value": "podzol", "file": "podzol.json" }
+					{ "value": "podzol", "file": "podzol.json" },
+					{ "value": "rooted_dirt", "file": "rooted_dirt.json" }
 				]
 			},
 			"default_state": "variant=dirt,snowy=false",
 			"id": {
 				"minecraft:dirt": "variant=dirt",
 				"minecraft:coarse_dirt": "variant=coarse_dirt",
-				"minecraft:podzol": "variant=podzol"
+				"minecraft:podzol": "variant=podzol",
+				"minecraft:rooted_dirt": "variant=rooted_dirt"
 			}
 		},
 		{
@@ -1046,18 +1173,45 @@
 		},
 		{
 			"name": "gold_ore",
-			"file": "gold_ore.json",
-			"id": "minecraft:gold_ore"
+			"states": {
+				"variant": [
+					{ "value": "gold_ore", "file": "gold_ore.json" },
+					{ "value": "deepslate_gold_ore", "file": "deepslate_gold_ore.json" }
+				]
+			},
+			"default_state": "variant=gold_ore",
+			"id": {
+				"minecraft:gold_ore": "variant=gold_ore",
+				"minecraft:deepslate_gold_ore": "variant=deepslate_gold_ore"
+			}
 		},
 		{
 			"name": "iron_ore",
-			"file": "iron_ore.json",
-			"id": "minecraft:iron_ore"
+			"states": {
+				"variant": [
+					{ "value": "iron_ore", "file": "iron_ore.json" },
+					{ "value": "deepslate_iron_ore", "file": "deepslate_iron_ore.json" }
+				]
+			},
+			"default_state": "variant=iron_ore",
+			"id": {
+				"minecraft:iron_ore": "variant=iron_ore",
+				"minecraft:deepslate_iron_ore": "variant=deepslate_iron_ore"
+			}
 		},
 		{
 			"name": "coal_ore",
-			"file": "coal_ore.json",
-			"id": "minecraft:coal_ore"
+			"states": {
+				"variant": [
+					{ "value": "coal_ore", "file": "coal_ore.json" },
+					{ "value": "deepslate_coal_ore", "file": "deepslate_coal_ore.json" }
+				]
+			},
+			"default_state": "variant=coal_ore",
+			"id": {
+				"minecraft:coal_ore": "variant=coal_ore",
+				"minecraft:deepslate_coal_ore": "variant=deepslate_coal_ore"
+			}
 		},
 		{
 			"name": "wood",
@@ -1177,7 +1331,9 @@
 					{ "value": "birch", "file": "birch_leaves.json" },
 					{ "value": "jungle", "file": "jungle_leaves.json" },
 					{ "value": "acacia", "file": "acacia_leaves.json" },
-					{ "value": "dark_oak", "file": "dark_oak_leaves.json" }
+					{ "value": "dark_oak", "file": "dark_oak_leaves.json" },
+					{ "value": "azalea", "file": "azalea_leaves.json" },
+					{ "value": "flowering_azalea", "file": "flowering_azalea_leaves.json" }
 				]
 			},
 			"default_state": "variant=oak",
@@ -1191,7 +1347,9 @@
 				"minecraft:birch_leaves": "variant=birch",
 				"minecraft:jungle_leaves": "variant=jungle",
 				"minecraft:acacia_leaves": "variant=acacia",
-				"minecraft:dark_oak_leaves": "variant=dark_oak"
+				"minecraft:dark_oak_leaves": "variant=dark_oak",
+				"minecraft:azalea_leaves": "variant=azalea",
+				"minecraft:flowering_azalea_leaves": "variant=flowering_azalea"
 			}
 		},
 		{
@@ -1215,8 +1373,17 @@
 		},
 		{
 			"name": "lapis_ore",
-			"file": "lapis_ore.json",
-			"id": "minecraft:lapis_ore"
+			"states": {
+				"variant": [
+					{ "value": "lapis_ore", "file": "lapis_ore.json" },
+					{ "value": "deepslate_lapis_ore", "file": "deepslate_lapis_ore.json" }
+				]
+			},
+			"default_state": "variant=lapis_ore",
+			"id": {
+				"minecraft:lapis_ore": "variant=lapis_ore",
+				"minecraft:deepslate_lapis_ore": "variant=deepslate_lapis_ore"
+			}
 		},
 		{
 			"name": "lapis_block",
@@ -1259,7 +1426,7 @@
 			"name": "bed",
 			"type": "bed",
 			"states": {
-				"facing": [ "east", "west", "south", "north" ],
+				"facing": [ "north", "south", "east", "west" ],
 				"part": [ "foot", "head" ],
 				"color": [
 					{ "value": "red" },
@@ -1280,16 +1447,16 @@
 					{ "value": "black" }
 				]
 			},
-			"default_state": "facing=north,part=foot,color=red",
+			"default_state": "facing=west,part=foot,color=red",
 			"timeline": {
 				"model": "bed",
 				"rotation_point": [ 0, 0, 8 ],
 				"position": [ 8, 0, 8 ],
 				"rotation": {
-					"facing=east": [ 0, -90, 0 ],
+					"facing=north": [ 0, 0, 0 ],
 					"facing=south": [ 0, 180, 0 ],
-					"facing=west": [ 0, 90, 0 ],
-					"facing=north": [ 0, 0, 0 ]
+					"facing=east": [ 0, -90, 0 ],
+					"facing=west": [ 0, 90, 0 ]
 				}
 			},
 			"id": {
@@ -1318,7 +1485,7 @@
 				"powered": [ "false", "true" ],
 				"shape": [ "north_south", "east_west", "ascending_north", "ascending_south", "ascending_east", "ascending_west" ]
 			},
-			"default_state": "powered=false,shape=north_south",
+			"default_state": "powered=false,shape=east_west",
 			"id": "minecraft:powered_rail"
 		},
 		{
@@ -1328,7 +1495,7 @@
 				"powered": [ "false", "true" ],
 				"shape": [ "north_south", "east_west", "ascending_north", "ascending_south", "ascending_east", "ascending_west" ]
 			},
-			"default_state": "powered=false,shape=north_south",
+			"default_state": "powered=false,shape=east_west",
 			"id": "minecraft:detector_rail"
 		},
 		{
@@ -1345,12 +1512,12 @@
 				"rotation_point": [ 0, 8, 0 ],
 				"position": [ 8, 8, 8 ],
 				"rotation": {
-					"facing=down": [ 90, 0, 0 ],
-					"facing=up": [ -90, 0, 0 ],
 					"facing=north": [ 0, 180, 0 ],
 					"facing=south": [ 0, 0, 0 ],
 					"facing=east": [ 0, 90, 0 ],
-					"facing=west": [ 0, -90, 0 ]
+					"facing=west": [ 0, -90, 0 ],
+					"facing=down": [ 90, 0, 0 ],
+					"facing=up": [ -90, 0, 0 ]
 				}
 			},
 			"id": "minecraft:sticky_piston"
@@ -1365,12 +1532,11 @@
 			"states": {
 				"type": [
 					{ "value": "dead_bush", "file": "dead_bush.json" },
-					{ "value": "grass", "file": "grass.json" },
-					{ "value": "fern", "file": "fern.json" }
+					{ "value": "grass", "file": "grass.json", "random_offset": true },
+					{ "value": "fern", "file": "fern.json", "random_offset": true }
 				]
 			},
 			"default_state": "type=grass",
-			"random_offset": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -1396,12 +1562,12 @@
 				"rotation_point": [ 0, 8, 0 ],
 				"position": [ 8, 8, 8 ],
 				"rotation": {
-					"facing=down": [ 90, 0, 0 ],
-					"facing=up": [ -90, 0, 0 ],
 					"facing=north": [ 0, 180, 0 ],
 					"facing=south": [ 0, 0, 0 ],
 					"facing=east": [ 0, 90, 0 ],
-					"facing=west": [ 0, -90, 0 ]
+					"facing=west": [ 0, -90, 0 ],
+					"facing=down": [ 90, 0, 0 ],
+					"facing=up": [ -90, 0, 0 ]
 				}
 			},
 			"id": "minecraft:piston"
@@ -1469,7 +1635,7 @@
 			},
 			"default_state": "type=poppy",
 			"light_bleeding": 1,
-			"random_offset": true,
+			"random_offset_xz": true,
 			"wind": {
 				"axis": "all",
 				"ymin": 0
@@ -1555,7 +1721,19 @@
 					{ "value": "diorite", "file": "diorite_slab.json"},
 					{ "value": "blackstone", "file": "blackstone_slab.json"},
 					{ "value": "polished_blackstone", "file": "polished_blackstone_slab.json"},
-					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_slab.json"}
+					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_slab.json"},
+					{ "value": "cut_copper", "file": "cut_copper_slab.json"},
+					{ "value": "exposed_cut_copper", "file": "exposed_cut_copper_slab.json"},
+					{ "value": "weathered_cut_copper", "file": "weathered_cut_copper_slab.json"},
+					{ "value": "oxidized_cut_copper", "file": "oxidized_cut_copper_slab.json"},
+					{ "value": "waxed_cut_copper", "file": "waxed_cut_copper_slab.json"},
+					{ "value": "waxed_exposed_cut_copper", "file": "waxed_exposed_cut_copper_slab.json"},
+					{ "value": "waxed_weathered_cut_copper", "file": "waxed_weathered_cut_copper_slab.json"},
+					{ "value": "waxed_oxidized_cut_copper", "file": "waxed_oxidized_cut_copper_slab.json"},
+					{ "value": "cobbled_deepslate", "file": "cobbled_deepslate_slab.json"},
+					{ "value": "polished_deepslate", "file": "polished_deepslate_slab.json"},
+					{ "value": "deepslate_bricks", "file": "deepslate_brick_slab.json"},
+					{ "value": "deepslate_tiles", "file": "deepslate_tile_slab.json"}
 				],
 				"type": [ "top", "bottom", "double" ]
 			},
@@ -1600,7 +1778,19 @@
 				"minecraft:diorite_slab": "variant=diorite",
 				"minecraft:blackstone_slab": "variant=blackstone",
 				"minecraft:polished_blackstone_slab": "variant=polished_blackstone",
-				"minecraft:polished_blackstone_brick_slab": "variant=polished_blackstone_brick"
+				"minecraft:polished_blackstone_brick_slab": "variant=polished_blackstone_brick",
+				"minecraft:cut_copper_slab": "variant=cut_copper",
+				"minecraft:exposed_cut_copper_slab": "variant=exposed_cut_copper",
+				"minecraft:weathered_cut_copper_slab": "variant=weathered_cut_copper",
+				"minecraft:oxidized_cut_copper_slab": "variant=oxidized_cut_copper",
+				"minecraft:waxed_cut_copper_slab": "variant=waxed_cut_copper",
+				"minecraft:waxed_exposed_cut_copper_slab": "variant=waxed_exposed_cut_copper",
+				"minecraft:waxed_weathered_cut_copper_slab": "variant=waxed_weathered_cut_copper",
+				"minecraft:waxed_oxidized_cut_copper_slab": "variant=waxed_oxidized_cut_copper",
+				"minecraft:cobbled_deepslate_slab": "variant=cobbled_deepslate",
+				"minecraft:polished_deepslate_slab": "variant=polished_deepslate",
+				"minecraft:deepslate_brick_slab": "variant=deepslate_bricks",
+				"minecraft:deepslate_tile_slab": "variant=deepslate_tiles"
 			}
 		},
 		{
@@ -1650,7 +1840,7 @@
 					{ "value": "normal", "file": "wall_torch.json" },
 					{ "value": "soul_torch", "file": "soul_wall_torch.json" }
 				],
-				"facing": [ "north", "east", "south", "west" ]
+				"facing": [ "north", "south", "east", "west" ]
 			},
 			"default_state": "facing=east,variant=normal",
 			"brightness": 0.75,
@@ -1667,10 +1857,10 @@
 					{ "value": "normal", "file": "fire.json" },
 					{ "value": "soul_fire", "file": "soul_fire.json" }
 				],
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
 				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
 				"up": [ "false", "true" ]
 			},
 			"default_state": "variant=normal",
@@ -1723,15 +1913,27 @@
 					{ "value": "red_nether_brick", "file": "red_nether_brick_stairs.json" },
 					{ "value": "polished_andesite", "file": "polished_andesite_stairs.json" },
 					{ "value": "diorite", "file": "diorite_stairs.json" },
-					{ "value": "blackstone", "file": "blackstone_stairs.json"},
-					{ "value": "polished_blackstone", "file": "polished_blackstone_stairs.json"},
-					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_stairs.json"}
+					{ "value": "blackstone", "file": "blackstone_stairs.json" },
+					{ "value": "polished_blackstone", "file": "polished_blackstone_stairs.json" },
+					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_stairs.json" },
+					{ "value": "cut_copper", "file": "cut_copper_stairs.json" },
+					{ "value": "exposed_cut_copper", "file": "exposed_cut_copper_stairs.json" },
+					{ "value": "weathered_cut_copper", "file": "weathered_cut_copper_stairs.json" },
+					{ "value": "oxidized_cut_copper", "file": "oxidized_cut_copper_stairs.json" },
+					{ "value": "waxed_cut_copper", "file": "waxed_cut_copper_stairs.json" },
+					{ "value": "waxed_exposed_cut_copper", "file": "waxed_exposed_cut_copper_stairs.json" },
+					{ "value": "waxed_weathered_cut_copper", "file": "waxed_weathered_cut_copper_stairs.json" },
+					{ "value": "waxed_oxidized_cut_copper", "file": "waxed_oxidized_cut_copper_stairs.json" },
+					{ "value": "cobbled_deepslate", "file": "cobbled_deepslate_stairs.json" },
+					{ "value": "polished_deepslate", "file": "polished_deepslate_stairs.json" },
+					{ "value": "deepslate_bricks", "file": "deepslate_brick_stairs.json" },
+					{ "value": "deepslate_tiles", "file": "deepslate_tile_stairs.json" }
 				],
 				"facing": [ "north", "south", "east", "west" ],
 				"half": [ "top", "bottom" ],
 				"shape": [ "straight", "inner_left", "inner_right", "outer_left", "outer_right" ]
 			},
-			"default_state": "variant=oak,facing=north,half=bottom,shape=straight",
+			"default_state": "variant=oak,facing=east,half=bottom,shape=straight",
 			"id": {
 				"minecraft:oak_stairs": "variant=oak",
 				"minecraft:spruce_stairs": "variant=spruce",
@@ -1768,7 +1970,19 @@
 				"minecraft:diorite_stairs": "variant=diorite",
 				"minecraft:blackstone_stairs": "variant=blackstone",
 				"minecraft:polished_blackstone_stairs": "variant=polished_blackstone",
-				"minecraft:polished_blackstone_brick_stairs": "variant=polished_blackstone_brick"
+				"minecraft:polished_blackstone_brick_stairs": "variant=polished_blackstone_brick",
+				"minecraft:cut_copper_stairs": "variant=cut_copper",
+				"minecraft:exposed_cut_copper_stairs": "variant=exposed_cut_copper",
+				"minecraft:weathered_cut_copper_stairs": "variant=weathered_cut_copper",
+				"minecraft:oxidized_cut_copper_stairs": "variant=oxidized_cut_copper",
+				"minecraft:waxed_cut_copper_stairs": "variant=waxed_cut_copper",
+				"minecraft:waxed_exposed_cut_copper_stairs": "variant=waxed_exposed_cut_copper",
+				"minecraft:waxed_weathered_cut_copper_stairs": "variant=waxed_weathered_cut_copper",
+				"minecraft:waxed_oxidized_cut_copper_stairs": "variant=waxed_oxidized_cut_copper",
+				"minecraft:cobbled_deepslate_stairs": "variant=cobbled_deepslate",
+				"minecraft:polished_deepslate_stairs": "variant=polished_deepslate",
+				"minecraft:deepslate_brick_stairs": "variant=deepslate_bricks",
+				"minecraft:deepslate_tile_stairs": "variant=deepslate_tiles"
 			}
 		},
 		{
@@ -1806,18 +2020,27 @@
 			"require_models": true,
 			"states": {
 				"power": [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15" ],
-				"east": [ "none", "side", "up" ],
-				"west": [ "none", "side", "up" ],
 				"north": [ "none", "side", "up" ],
-				"south": [ "none", "side", "up" ]
+				"south": [ "none", "side", "up" ],
+				"east": [ "none", "side", "up" ],
+				"west": [ "none", "side", "up" ]
 			},
-			"default_state": "power=0,east=side,west=side,north=side,south=side",
+			"default_state": "power=0,north=side,south=side,east=side,west=side",
 			"id": "minecraft:redstone_wire"
 		},
 		{
 			"name": "diamond_ore",
-			"file": "diamond_ore.json",
-			"id": "minecraft:diamond_ore"
+			"states": {
+				"variant": [
+					{ "value": "diamond_ore", "file": "diamond_ore.json" },
+					{ "value": "deepslate_diamond_ore", "file": "deepslate_diamond_ore.json" }
+				]
+			},
+			"default_state": "variant=diamond_ore",
+			"id": {
+				"minecraft:diamond_ore": "variant=diamond_ore",
+				"minecraft:deepslate_diamond_ore": "variant=deepslate_diamond_ore"
+			}
 		},
 		{
 			"name": "diamond_block",
@@ -1857,7 +2080,7 @@
 			"file": "furnace.json",
 			"states": {
 				"facing": [ "north", "south", "east", "west" ],
-				"lit": [ "true", "false" ]
+				"lit": [ "false", "true" ]
 			},
 			"default_state": "facing=west,lit=false",
 			"id": "minecraft:furnace"
@@ -1934,7 +2157,7 @@
 				"open": [ "false", "true" ],
 				"half": [ "lower", "upper" ],
 				"location": [ "north_west", "north_east", "south_west", "south_east" ],
-				"direction": [ "east", "south", "west", "north" ]
+				"direction": [ "north", "south", "east", "west" ]
 			},
 			"default_state": "variant=oak,hinge=right,facing=west,open=false",
 			"timeline": {
@@ -1946,10 +2169,10 @@
 					"location=south_east": [ 14.5, 0, 14.5 ]
 				},
 				"rotation": {
-					"direction=east": [ 0, 0, 0 ],
+					"direction=north": [ 0, 90, 0 ],
 					"direction=south": [ 0, -90, 0],
-					"direction=west": [ 0, 180, 0 ],
-					"direction=north": [ 0, 90, 0 ]
+					"direction=east": [ 0, 0, 0 ],
+					"direction=west": [ 0, 180, 0 ]
 				}
 			},
 			"id": {
@@ -1977,9 +2200,9 @@
 			"name": "rail",
 			"file": "rail.json",
 			"states": {
-				"shape": [ "north_south", "east_west", "ascending_north", "ascending_south", "ascending_east", "ascending_west", "south_east", "south_west", "north_west", "north_east"  ]
+				"shape": [ "north_south", "east_west", "ascending_north", "ascending_south", "ascending_east", "ascending_west", "north_west", "north_east", "south_east", "south_west"  ]
 			},
-			"default_state": "shape=north_south",
+			"default_state": "shape=east_west",
 			"id": "minecraft:rail"
 		},
 		{
@@ -2003,16 +2226,16 @@
 				"has_text": true,
 				"text_position": [ 0, 8.2, 1.5 ],
 				"position": {
-					"facing=east": [ 0, 0, 8 ],
-					"facing=west": [ 16, 0, 8 ],
+					"facing=north": [ 8, 0, 16 ],
 					"facing=south": [ 8, 0, 0 ],
-					"facing=north": [ 8, 0, 16 ]
+					"facing=east": [ 0, 0, 8 ],
+					"facing=west": [ 16, 0, 8 ]
 				},
 				"rotation": {
-					"facing=east": [ 0, 90, 0 ],
-					"facing=west": [ 0, -90, 0 ],
+					"facing=north": [ 0, 180, 0 ],
 					"facing=south": [ 0, 0, 0 ],
-					"facing=north": [ 0, 180, 0 ]
+					"facing=east": [ 0, 90, 0 ],
+					"facing=west": [ 0, -90, 0 ]
 				}
 			},
 			"default_state": "facing=west,wood=oak",
@@ -2103,15 +2326,21 @@
 		},
 		{
 			"name": "redstone_ore",
-			"file": "redstone_ore.json",
 			"states": {
+				"variant": [
+					{ "value": "redstone_ore", "file": "redstone_ore.json" },
+					{ "value": "deepslate_redstone_ore", "file": "deepslate_redstone_ore.json" }
+				],
 				"lit": [ 
 					{ "value": "false" },
 					{ "value": "true", "brightness": 0.75 }
 				]
 			},
-			"default_state": "lit=false",
-			"id": "minecraft:redstone_ore"
+			"default_state": "variant=redstone_ore,lit=false",
+			"id": {
+				"minecraft:redstone_ore": "variant=redstone_ore",
+				"minecraft:deepslate_redstone_ore": "variant=deepslate_redstone_ore"
+			}
 		},
 		{
 			"name": "redstone_torch",
@@ -2158,7 +2387,7 @@
 				"facing": [ "north", "south", "east", "west" ],
 				"powered": [ "false", "true" ]
 			},
-			"default_state": "variant=stone,face=floor,facing=south,powered=false",
+			"default_state": "variant=stone,face=floor,facing=west,powered=false",
 			"timeline": {
 				"rotation_point": [ 8, 0, 8 ],
 				"position": {
@@ -2254,13 +2483,13 @@
 					{ "value": "crimson", "file": "crimson_fence.json" },
 					{ "value": "warped", "file": "warped_fence.json" }
 				],
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
-				"south": [ "false", "true" ]
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ]
 			},
 			"require_models": true,
-			"default_state": "variant=oak,east=false,west=false,north=false,south=false",
+			"default_state": "variant=oak,north=false,south=false,east=false,west=false",
 			"id": {
 				"minecraft:oak_fence": "variant=oak",
 				"minecraft:spruce_fence": "variant=spruce",
@@ -2300,7 +2529,7 @@
 			"states": {
 				"axis": [ "x", "z" ]
 			},
-			"default_state": "axis=x",
+			"default_state": "axis=z",
 			"brightness": 0.5,
 			"id": "minecraft:nether_portal"
 		},
@@ -2321,12 +2550,54 @@
 		},
 		{
 			"name": "cake",
-			"file": "cake.json",
 			"states": {
-				"bites": [ "0", "1", "2", "3", "4", "5", "6" ]
+				"bites": [ "0", "1", "2", "3", "4", "5", "6" ],
+				"candle": [
+					{ "value": "none", "file": "cake.json" },
+					{ "value": "normal", "file": "candle_cake.json" },
+					{ "value": "white", "file": "white_candle_cake.json" },
+					{ "value": "orange", "file": "orange_candle_cake.json" },
+					{ "value": "magenta", "file": "magenta_candle_cake.json" },
+					{ "value": "light_blue", "file": "light_blue_candle_cake.json" },
+					{ "value": "yellow", "file": "yellow_candle_cake.json" },
+					{ "value": "lime", "file": "lime_candle_cake.json" },
+					{ "value": "pink", "file": "pink_candle_cake.json" },
+					{ "value": "gray", "file": "gray_candle_cake.json" },
+					{ "value": "light_gray", "file": "light_gray_candle_cake.json" },
+					{ "value": "cyan", "file": "cyan_candle_cake.json" },
+					{ "value": "purple", "file": "purple_candle_cake.json" },
+					{ "value": "blue", "file": "blue_candle_cake.json" },
+					{ "value": "brown", "file": "brown_candle_cake.json" },
+					{ "value": "green", "file": "green_candle_cake.json" },
+					{ "value": "red", "file": "red_candle_cake.json" },
+					{ "value": "black", "file": "black_candle_cake.json" }
+				],
+				"lit": [ 
+					{ "value": "false" },
+					{ "value": "true", "brightness": 0.5 }
+				]
 			},
-			"default_state": "bites=0",
-			"id": "minecraft:cake"
+			"default_state": "bites=0,candle=none,lit=false",
+			"id": {
+				"minecraft:cake": "candle=none",
+				"minecraft:candle_cake": "candle=normal",
+				"minecraft:white_candle_cake": "candle=white",
+				"minecraft:orange_candle_cake": "candle=orange",
+				"minecraft:magenta_candle_cake": "candle=magenta",
+				"minecraft:light_blue_candle_cake": "candle=light_blue",
+				"minecraft:yellow_candle_cake": "candle=yellow",
+				"minecraft:lime_candle_cake": "candle=lime",
+				"minecraft:pink_candle_cake": "candle=pink",
+				"minecraft:gray_candle_cake": "candle=gray",
+				"minecraft:light_gray_candle_cake": "candle=light_gray",
+				"minecraft:cyan_candle_cake": "candle=cyan",
+				"minecraft:purple_candle_cake": "candle=purple",
+				"minecraft:blue_candle_cake": "candle=blue",
+				"minecraft:brown_candle_cake": "candle=brown",
+				"minecraft:green_candle_cake": "candle=green",
+				"minecraft:red_candle_cake": "candle=red",
+				"minecraft:black_candle_cake": "candle=black"
+			}
 		},
 		{
 			"name": "repeater",
@@ -2408,30 +2679,30 @@
 			"default_state": "variant=oak,facing=west,open=false,half=bottom",
 			"timeline": {
 				"rotation_point": {
-					"facing=east": [ 1.5, 1.5, 8 ],
-					"facing=west": [ 14.5, 1.5, 8 ],
+					"facing=north": [ 8, 1.5, 14.5 ],
 					"facing=south": [ 8, 1.5, 1.5 ],
-					"facing=north": [ 8, 1.5, 14.5 ]
+					"facing=east": [ 1.5, 1.5, 8 ],
+					"facing=west": [ 14.5, 1.5, 8 ]
 				},
 				"position": {
+					"facing=north,half=bottom": [ 8, 1.5, 14.5 ],
+					"facing=south,half=bottom": [ 8, 1.5, 1.5 ],
 					"facing=east,half=bottom": [ 1.5, 1.5, 8 ],
 					"facing=west,half=bottom": [ 14.5, 1.5, 8 ],
-					"facing=south,half=bottom": [ 8, 1.5, 1.5 ],
-					"facing=north,half=bottom": [ 8, 1.5, 14.5 ],
-					"facing=east,half=top": [ 1.5, 14.5, 8 ],
-					"facing=west,half=top": [ 14.5, 14.5, 8 ],
+					"facing=north,half=top": [ 8, 14.5, 14.5 ],
 					"facing=south,half=top": [ 8, 14.5, 1.5 ],
-					"facing=north,half=top": [ 8, 14.5, 14.5 ]
+					"facing=east,half=top": [ 1.5, 14.5, 8 ],
+					"facing=west,half=top": [ 14.5, 14.5, 8 ]
 				},
 				"rotation": {
+					"facing=north,half=bottom,open=true": [ 90, 0, 0 ],
+					"facing=south,half=bottom,open=true": [ -90, 0, 0 ],
 					"facing=east,half=bottom,open=true": [ 0, 0, 90 ],
 					"facing=west,half=bottom,open=true": [ 0, 0, -90 ],
-					"facing=south,half=bottom,open=true": [ -90, 0, 0 ],
-					"facing=north,half=bottom,open=true": [ 90, 0, 0 ],
-					"facing=east,half=top,open=true": [ 0, 0, -90 ],
-					"facing=west,half=top,open=true": [ 0, 0, 90 ],
+					"facing=north,half=top,open=true": [ -90, 0, 0 ],
 					"facing=south,half=top,open=true": [ 90, 0, 0 ],
-					"facing=north,half=top,open=true": [ -90, 0, 0 ]
+					"facing=east,half=top,open=true": [ 0, 0, -90 ],
+					"facing=west,half=top,open=true": [ 0, 0, 90 ]
 				}
 			},
 			"id": {
@@ -2455,17 +2726,20 @@
 					{ "value": "stone_bricks", "file": "infested_stone_bricks.json" },
 					{ "value": "mossy_stone_bricks", "file": "infested_mossy_stone_bricks.json" },
 					{ "value": "cracked_stone_bricks", "file": "infested_cracked_stone_bricks.json" },
-					{ "value": "chiseled_stone_bricks", "file": "infested_chiseled_stone_bricks.json" }
-				]
+					{ "value": "chiseled_stone_bricks", "file": "infested_chiseled_stone_bricks.json" },
+					{ "value": "deepslate", "file": "infested_deepslate.json" }
+				],
+				"axis": [ "x", "y", "z" ]
 			},
-			"default_state": "variant=stone",
+			"default_state": "variant=stone,axis=y",
 			"id": {
 				"minecraft:infested_stone": "variant=stone",
 				"minecraft:infested_cobblestone": "variant=cobblestone",
 				"minecraft:infested_stone_bricks": "variant=stone_bricks",
 				"minecraft:infested_mossy_stone_bricks": "variant=mossy_stone_bricks",
 				"minecraft:infested_cracked_stone_bricks": "variant=cracked_stone_bricks",
-				"minecraft:infested_chiseled_stone_bricks": "variant=chiseled_stone_bricks"
+				"minecraft:infested_chiseled_stone_bricks": "variant=chiseled_stone_bricks",
+				"minecraft:infested_deepslate": "variant=deepslate"
 			}
 		},
 		{
@@ -2490,12 +2764,12 @@
 			"name": "brown_mushroom_block",
 			"file": "brown_mushroom_block.json",
 			"states": {
-				"east": [ "true", "false" ],
-				"west": [ "true", "false" ],
-				"south": [ "true", "false" ],
-				"north": [ "true", "false" ],
-				"up": [ "true", "false" ],
-				"down": [ "true", "false" ]
+				"north": [ "false", "true" ],
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
+				"up": [ "false", "true" ],
+				"down": [ "false", "true" ]
 			},
 			"id": "minecraft:brown_mushroom_block"
 		},
@@ -2503,12 +2777,12 @@
 			"name": "red_mushroom_block",
 			"file": "red_mushroom_block.json",
 			"states": {
-				"east": [ "true", "false" ],
-				"west": [ "true", "false" ],
-				"south": [ "true", "false" ],
-				"north": [ "true", "false" ],
-				"up": [ "true", "false" ],
-				"down": [ "true", "false" ]
+				"north": [ "false", "true" ],
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
+				"up": [ "false", "true" ],
+				"down": [ "false", "true" ]
 			},
 			"id": "minecraft:red_mushroom_block"
 		},
@@ -2516,12 +2790,12 @@
 			"name": "mushroom_stem",
 			"file": "mushroom_stem.json",
 			"states": {
-				"east": [ "true", "false" ],
-				"west": [ "true", "false" ],
-				"south": [ "true", "false" ],
-				"north": [ "true", "false" ],
-				"up": [ "true", "false" ],
-				"down": [ "true", "false" ]
+				"north": [ "false", "true" ],
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
+				"up": [ "false", "true" ],
+				"down": [ "false", "true" ]
 			},
 			"id": "minecraft:mushroom_stem"
 		},
@@ -2530,10 +2804,10 @@
 			"file": "iron_bars.json",
 			"type": "bars",
 			"states": {
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
-				"south": [ "false", "true" ]
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ]
 			},
 			"require_models": true,
 			"id": "minecraft:iron_bars"
@@ -2543,10 +2817,10 @@
 			"file": "glass_pane.json",
 			"type": "bars",
 			"states": {
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
-				"south": [ "false", "true" ]
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ]
 			},
 			"require_models": true,
 			"id": "minecraft:glass_pane"
@@ -2576,7 +2850,7 @@
 			"states": {
 				"facing": [ "north", "south", "east", "west" ]
 			},
-			"default_state": "facing=east",
+			"default_state": "facing=west",
 			"light_bleeding": 1,
 			"id": "minecraft:attached_pumpkin_stem"
 		},
@@ -2601,7 +2875,7 @@
 			"states": {
 				"facing": [ "north", "south", "east", "west" ]
 			},
-			"default_state": "facing=east",
+			"default_state": "facing=west",
 			"id": "minecraft:attached_melon_stem"
 		},
 		{
@@ -2609,13 +2883,13 @@
 			"file": "vine.json",
 			"type": "vine",
 			"states": {
-				"south": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
+				"south": [ "false", "true" ],
 				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
 				"up": [ "false", "true" ]
 			},
-			"default_state": "south=false,west=false,north=false,east=false,up=false",
+			"default_state": "north=false,south=false,east=true,west=false,up=false",
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all"
@@ -2703,9 +2977,11 @@
 			"name": "enchanting_table",
 			"file": "enchanting_table.json",
 			"timeline": {
-				"model": "enchantment_table",
-				"model_state": "",
-				"position": [ 8, 0, 8 ]
+				"model": "book",
+				"model_double": true,
+				"rotation_point": [ 0, 3, 0 ],
+				"position": [ 8, 20, 8 ],
+				"rotation": [ 15, 0, 0 ]
 			},
 			"id": "minecraft:enchanting_table"
 		},
@@ -2722,12 +2998,22 @@
 		},
 		{
 			"name": "cauldron",
-			"file": "cauldron.json",
 			"states": {
-				"level": [ "0", "1", "2", "3" ]
+				"contents": [
+					{ "value": "empty", "file": "cauldron.json" },
+					{ "value": "water", "file": "water_cauldron.json" },
+					{ "value": "lava", "file": "lava_cauldron.json", "brightness": 0.75 },
+					{ "value": "powder_snow", "file": "powder_snow_cauldron.json" }
+				],
+				"level": [ "1", "2", "3" ]
 			},
-			"default_state": "level=0",
-			"id": "minecraft:cauldron"
+			"default_state": "contents=empty,level=3",
+			"id": {
+				"minecraft:cauldron": "contents=empty",
+				"minecraft:water_cauldron": "contents=water",
+				"minecraft:lava_cauldron": "contents=lava",
+				"minecraft:powder_snow_cauldron": "contents=powder_snow"
+			}
 		},
 		{
 			"name": "end_portal_frame",
@@ -2768,13 +3054,22 @@
 				"facing": [ "north", "south", "east", "west" ],
 				"age": [ "0", "1", "2" ]
 			},
-			"default_state": "facing=west,age=0",
+			"default_state": "facing=east,age=0",
 			"id": "minecraft:cocoa"
 		},
 		{
 			"name": "emerald_ore",
-			"file": "emerald_ore.json",
-			"id": "minecraft:emerald_ore"
+			"states": {
+				"variant": [
+					{ "value": "emerald_ore", "file": "emerald_ore.json" },
+					{ "value": "deepslate_emerald_ore", "file": "deepslate_emerald_ore.json" }
+				]
+			},
+			"default_state": "variant=emerald_ore",
+			"id": {
+				"minecraft:emerald_ore": "variant=emerald_ore",
+				"minecraft:deepslate_emerald_ore": "variant=deepslate_emerald_ore"
+			}
 		},
 		{
 			"name": "ender_chest",
@@ -2828,10 +3123,10 @@
 			"file": "tripwire.json",
 			"type": "tripwire",
 			"states": {
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
 				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
 				"attached": [ "false", "true" ]
 			},
 			"default_state": "attached=false",
@@ -2879,12 +3174,16 @@
 					{ "value": "diorite", "file": "diorite_wall.json" },
 					{ "value": "blackstone", "file": "blackstone_wall.json" },
 					{ "value": "polished_blackstone", "file": "polished_blackstone_wall.json" },
-					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_wall.json" }
+					{ "value": "polished_blackstone_brick", "file": "polished_blackstone_brick_wall.json" },
+					{ "value": "cobbled_deepslate", "file": "cobbled_deepslate_wall.json" },
+					{ "value": "polished_deepslate", "file": "polished_deepslate_wall.json" },
+					{ "value": "deepslate_bricks", "file": "deepslate_brick_wall.json" },
+					{ "value": "deepslate_tiles", "file": "deepslate_tile_wall.json" }
 				],
-				"east": [ "none", "low", "tall"],
-				"west": [ "none", "low", "tall"],
-				"north": [ "none", "low", "tall"],
-				"south": [ "none", "low", "tall"],
+				"north": [ "none", "low", "tall" ],
+				"south": [ "none", "low", "tall" ],
+				"east": [ "none", "low", "tall" ],
+				"west": [ "none", "low", "tall" ],
 				"up": [ "false", "true" ]
 			},
 			"default_state": "variant=cobblestone",
@@ -2905,7 +3204,11 @@
 				"minecraft:diorite_wall": "variant=diorite",
 				"minecraft:blackstone_wall": "variant=blackstone",
 				"minecraft:polished_blackstone_wall": "variant=polished_blackstone",
-				"minecraft:polished_blackstone_brick_wall": "variant=polished_blackstone_brick"
+				"minecraft:polished_blackstone_brick_wall": "variant=polished_blackstone_brick",
+				"minecraft:cobbled_deepslate_wall": "variant=cobbled_deepslate",
+				"minecraft:polished_deepslate_wall": "variant=polished_deepslate",
+				"minecraft:deepslate_brick_wall": "variant=deepslate_bricks",
+				"minecraft:deepslate_tile_wall": "variant=deepslate_tiles"
 			}
 		},
 		{
@@ -2941,7 +3244,9 @@
 					{ "value": "warped_fungus", "file": "potted_warped_fungus.json" },
 					{ "value": "warped_roots", "file": "potted_warped_roots.json" },
 					{ "value": "crimson_fungus", "file": "potted_crimson_fungus.json" },
-					{ "value": "crimson_roots", "file": "potted_crimson_roots.json" }
+					{ "value": "crimson_roots", "file": "potted_crimson_roots.json" },
+					{ "value": "azalea", "file": "potted_azalea_bush.json" },
+					{ "value": "flowering_azalea", "file": "potted_flowering_azalea_bush.json" }
 				]
 			},
 			"default_state": "contents=poppy",
@@ -2975,7 +3280,9 @@
 				"minecraft:potted_warped_fungus": "contents=warped_fungus",
 				"minecraft:potted_warped_roots": "contents=warped_roots",
 				"minecraft:potted_crimson_fungus": "contents=crimson_fungus",
-				"minecraft:potted_crimson_roots": "contents=crimson_roots"
+				"minecraft:potted_crimson_roots": "contents=crimson_roots",
+				"minecraft:potted_azalea_bush": "contents=azalea",
+				"minecraft:potted_flowering_azalea_bush": "contents=flowering_azalea"
 			}
 		},
 		{
@@ -3005,6 +3312,132 @@
 				"ymin": 0
 			},
 			"id": "minecraft:potatoes"
+		},
+		{
+			"name": "mob_head",
+			"states": {
+				"rotation": [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15" ],
+				"character": [ "skeleton", "wither_skeleton", "human", "zombie", "creeper" ]
+			},
+			"default_state": "rotation=0,character=human",
+			"timeline": {
+				"model": "mob_head",
+				"model_state": {
+					"character=skeleton": "type=ground,character=skeleton",
+					"character=wither_skeleton": "type=ground,character=wither_skeleton",
+					"character=human": "type=ground,character=human",
+					"character=zombie": "type=ground,character=zombie",
+					"character=creeper": "type=ground,character=creeper"
+				},
+				"position": [ 8, 0, 8 ],
+				"rotation": {
+					"rotation=0": [ 0, 180, 0 ],
+					"rotation=1": [ 0, 157.5, 0 ],
+					"rotation=2": [ 0, 135, 0 ],
+					"rotation=3": [ 0, 112.5, 0 ],
+					"rotation=4": [ 0, 90, 0 ],
+					"rotation=5": [ 0, 67.5, 0 ],
+					"rotation=6": [ 0, 45, 0 ],
+					"rotation=7": [ 0, 22.5, 0 ],
+					"rotation=8": [ 0, 0, 0 ],
+					"rotation=9": [ 0, -22.5, 0 ],
+					"rotation=10": [ 0, -45, 0 ],
+					"rotation=11": [ 0, -67.5, 0 ],
+					"rotation=12": [ 0, -90, 0 ],
+					"rotation=13": [ 0, -112.5, 0 ],
+					"rotation=14": [ 0, -135, 0 ],
+					"rotation=15": [ 0, -157.5, 0 ]
+				}
+			},
+			"id": {
+				"minecraft:skeleton_skull": "character=skeleton",
+				"minecraft:wither_skeleton_skull": "character=wither_skeleton",
+				"minecraft:player_head": "character=human",
+				"minecraft:zombie_head": "character=zombie",
+				"minecraft:creeper_head": "character=creeper"
+			}
+		},
+		{
+			"name": "mob_wall_head",
+			"states": {
+				"facing": [ "north", "south", "east", "west" ],
+				"character": [ "skeleton", "wither_skeleton", "human", "zombie", "creeper" ]
+			},
+			"default_state": "facing=west,character=human",
+			"timeline": {
+				"model": "mob_head",
+				"model_state": {
+					"character=skeleton": "type=wall,character=skeleton",
+					"character=wither_skeleton": "type=wall,character=wither_skeleton",
+					"character=human": "type=wall,character=human",
+					"character=zombie": "type=wall,character=zombie",
+					"character=creeper": "type=wall,character=creeper"
+				},
+				"position": [ 8, 0, 8 ],
+				"rotation": {
+					"facing=north": [ 0, 180, 0 ],
+					"facing=south": [ 0, 0, 0 ],
+					"facing=east": [ 0, 90, 0 ],
+					"facing=west": [ 0, -90, 0 ]
+				}
+			},
+			"id": {
+				"minecraft:skeleton_wall_skull": "character=skeleton",
+				"minecraft:wither_skeleton_wall_skull": "character=wither_skeleton",
+				"minecraft:player_wall_head": "character=human",
+				"minecraft:zombie_wall_head": "character=zombie",
+				"minecraft:creeper_wall_head": "character=creeper"
+			}
+		},
+		{
+			"name": "dragon_head",
+			"states": {
+				"rotation": [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15" ]
+			},
+			"default_state": "rotation=0",
+			"timeline": {
+				"model": "dragon_head",
+				"model_state": "type=ground",
+				"position": [ 8, 0, 8 ],
+				"rotation": {
+					"rotation=0": [ 0, 180, 0 ],
+					"rotation=1": [ 0, 157.5, 0 ],
+					"rotation=2": [ 0, 135, 0 ],
+					"rotation=3": [ 0, 112.5, 0 ],
+					"rotation=4": [ 0, 90, 0 ],
+					"rotation=5": [ 0, 67.5, 0 ],
+					"rotation=6": [ 0, 45, 0 ],
+					"rotation=7": [ 0, 22.5, 0 ],
+					"rotation=8": [ 0, 0, 0 ],
+					"rotation=9": [ 0, -22.5, 0 ],
+					"rotation=10": [ 0, -45, 0 ],
+					"rotation=11": [ 0, -67.5, 0 ],
+					"rotation=12": [ 0, -90, 0 ],
+					"rotation=13": [ 0, -112.5, 0 ],
+					"rotation=14": [ 0, -135, 0 ],
+					"rotation=15": [ 0, -157.5, 0 ]
+				}
+			},
+			"id": "minecraft:dragon_head"
+		},
+		{
+			"name": "dragon_wall_head",
+			"states": {
+				"facing": [ "north", "south", "east", "west" ]
+			},
+			"default_state": "facing=west",
+			"timeline": {
+				"model": "dragon_head",
+				"model_state": "type=wall",
+				"position": [ 8, 0, 8 ],
+				"rotation": {
+					"facing=north": [ 0, 180, 0 ],
+					"facing=south": [ 0, 0, 0 ],
+					"facing=east": [ 0, 90, 0 ],
+					"facing=west": [ 0, -90, 0 ]
+				}
+			},
+			"id": "minecraft:dragon_wall_head"
 		},
 		{
 			"name": "anvil",
@@ -3078,12 +3511,12 @@
 			"states": {
 				"facing": [ "north", "south", "east", "west" ],
 				"mode": [ 
-					{ "value": "subtract", "brightness": 0.75 },
-					"compare"
+					{ "value": "compare" },
+					{ "value": "subtract", "brightness": 0.5 }
 				],
 				"powered": [ 
-					{ "value": "true", "brightness": 0.75 },
-					"false"
+					{ "value": "false" },
+					{ "value": "true", "brightness": 0.75 }
 				]
 			},
 			"default_state": "facing=west,mode=compare,powered=false",
@@ -3093,7 +3526,7 @@
 			"name": "daylight_detector",
 			"file": "daylight_detector.json",
 			"states": {
-				"inverted": [ "true", "false" ],
+				"inverted": [ "false", "true" ],
 				"power": [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15" ]
 			},
 			"default_state": "inverted=false,power=0",
@@ -3146,7 +3579,7 @@
 				"powered": [ "false", "true" ],
 				"shape": [ "north_south", "east_west", "ascending_north", "ascending_south", "ascending_east", "ascending_west" ]
 			},
-			"default_state": "powered=false,shape=north_south",
+			"default_state": "powered=false,shape=east_west",
 			"id": "minecraft:activator_rail"
 		},
 		{
@@ -3223,10 +3656,10 @@
 					{ "value": "red", "file": "red_stained_glass_pane.json" },
 					{ "value": "black", "file": "black_stained_glass_pane.json" }
 				],
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
-				"south": [ "false", "true" ]
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ]
 			},
 			"default_state": "color=white",
 			"id": {
@@ -3252,6 +3685,11 @@
 			"name": "slime_block",
 			"file": "slime_block.json",
 			"id": "minecraft:slime_block"
+		},
+		{
+			"name": "light",
+			"file": "light.json",
+			"id": "minecraft:light"
 		},
 		{
 			"name": "standing_banner",
@@ -3480,7 +3918,7 @@
 				"half": [ "lower", "upper" ]
 			},
 			"default_state": "variant=sunflower",
-			"random_offset": true,
+			"random_offset_xz": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -3528,10 +3966,10 @@
 			"file": "chorus_plant.json",
 			"type": "chorus_plant",
 			"states": {
-				"east": [ "false", "true" ],
-				"west": [ "false", "true" ],
 				"north": [ "false", "true" ],
 				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
 				"up": [ "false", "true" ],
 				"down": [ "false", "true" ]
 			},
@@ -3581,9 +4019,9 @@
 			"id": "minecraft:beetroots"
 		},
 		{
-			"name": "grass_path",
-			"file": "grass_path.json",
-			"id": "minecraft:grass_path"
+			"name": "dirt_path",
+			"file": "dirt_path.json",
+			"id": "minecraft:dirt_path"
 		},
 		{
 			"name": "repeating_command_block",
@@ -3860,19 +4298,17 @@
 		{
 			"name": "sea_pickle",
 			"file": "sea_pickle.json",
-			"waterlogged": true,
 			"states": {
 				"pickles": [ "1", "2", "3", "4" ],
 				"waterlogged": [ "false", "true" ]
 			},
-			"default_state": "pickles=1",
+			"default_state": "pickles=1,waterlogged=false",
 			"brightness": 0.75,
 			"id": "minecraft:sea_pickle"
 		},
 		{
 			"name": "turtle_egg",
 			"file": "turtle_egg.json",
-			"waterlogged": true,
 			"states": {
 				"eggs": [ "1", "2", "3", "4" ],
 				"hatch": [ "0", "1", "2" ]
@@ -3883,6 +4319,7 @@
 		{
 			"name": "bubble_column",
 			"waterlogged": true,
+			"file": "bubble_column.json",
 			"id": "minecraft:bubble_column"
 		},
 		{
@@ -3899,11 +4336,11 @@
 		{
 			"name": "tall_seagrass",
 			"type": "double_plant",
-			"waterlogged": true,
 			"file": "tall_seagrass.json",
 			"states": {
 				"half": [ "lower", "upper" ]
 			},
+			"waterlogged": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -3935,12 +4372,10 @@
 		{
 			"name": "dried_kelp_block",
 			"file": "dried_kelp_block.json",
-			"waterlogged": true,
 			"id": "minecraft:dried_kelp_block"
 		},
 		{
 			"name": "coral",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "tube_coral.json" },
@@ -3952,10 +4387,6 @@
 			},
 			"default_state": "variant=tube",
 			"light_bleeding": 1,
-			"wind": {
-				"axis": "all",
-				"ymin": 0
-			},
 			"id": {
 				"minecraft:tube_coral": "variant=tube",
 				"minecraft:brain_coral": "variant=brain",
@@ -3966,7 +4397,6 @@
 		},
 		{
 			"name": "coral_fan",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "tube_coral_fan.json" },
@@ -3978,10 +4408,6 @@
 			},
 			"default_state": "variant=tube",
 			"light_bleeding": 1,
-			"wind": {
-				"axis": "all",
-				"ymin": 0
-			},
 			"id": {
 				"minecraft:tube_coral_fan": "variant=tube",
 				"minecraft:brain_coral_fan": "variant=brain",
@@ -3992,7 +4418,6 @@
 		},
 		{
 			"name": "coral_wall_fan",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "tube_coral_wall_fan.json" },
@@ -4001,9 +4426,9 @@
 					{ "value": "fire", "file": "fire_coral_wall_fan.json" },
 					{ "value": "horn", "file": "horn_coral_wall_fan.json" }
 				],
-				"facing": [ "east", "west", "south", "north" ]
+				"facing": [ "north", "south", "east", "west" ]
 			},
-			"default_state": "variant=tube,facing=east",
+			"default_state": "variant=tube,facing=west",
 			"light_bleeding": 1,
 			"id": {
 				"minecraft:tube_coral_wall_fan": "variant=tube",
@@ -4015,7 +4440,6 @@
 		},
 		{
 			"name": "coral_block",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "tube_coral_block.json" },
@@ -4036,7 +4460,6 @@
 		},
 		{
 			"name": "dead_coral",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "dead_tube_coral.json" },
@@ -4048,10 +4471,6 @@
 			},
 			"default_state": "variant=tube",
 			"light_bleeding": 1,
-			"wind": {
-				"axis": "all",
-				"ymin": 0
-			},
 			"id": {
 				"minecraft:dead_tube_coral": "variant=tube",
 				"minecraft:dead_brain_coral": "variant=brain",
@@ -4062,7 +4481,6 @@
 		},
 		{
 			"name": "dead_coral_fan",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "dead_tube_coral_fan.json" },
@@ -4074,10 +4492,6 @@
 			},
 			"default_state": "variant=tube",
 			"light_bleeding": 1,
-			"wind": {
-				"axis": "all",
-				"ymin": 0
-			},
 			"id": {
 				"minecraft:dead_tube_coral_fan": "variant=tube",
 				"minecraft:dead_brain_coral_fan": "variant=brain",
@@ -4088,7 +4502,6 @@
 		},
 		{
 			"name": "dead_coral_wall_fan",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "dead_tube_coral_wall_fan.json" },
@@ -4097,9 +4510,9 @@
 					{ "value": "fire", "file": "dead_fire_coral_wall_fan.json" },
 					{ "value": "horn", "file": "dead_horn_coral_wall_fan.json" }
 				],
-				"facing": [ "east", "west", "south", "north" ]
+				"facing": [ "north", "south", "east", "west" ]
 			},
-			"default_state": "variant=tube,facing=east",
+			"default_state": "variant=tube,facing=west",
 			"light_bleeding": 1,
 			"id": {
 				"minecraft:dead_tube_coral_wall_fan": "variant=tube",
@@ -4111,7 +4524,6 @@
 		},
 		{
 			"name": "dead_coral_block",
-			"waterlogged": true,
 			"states": {
 				"variant": [
 					{ "value": "tube", "file": "dead_tube_coral_block.json" },
@@ -4151,7 +4563,7 @@
 			"name": "scaffolding",
 			"file": "scaffolding.json",
 			"states": {
-				"bottom": [ "true", "false" ]
+				"bottom": [ "false", "true" ]
 			},
 			"default_state": "bottom=false",
 			"id": "minecraft:scaffolding"
@@ -4170,7 +4582,7 @@
 			"file": "barrel.json",
 			"states": {
 				"facing": [ "north", "south", "east", "west", "up", "down" ],
-				"open": [ "true", "false" ]
+				"open": [ "false", "true" ]
 			},
 			"default_state": "facing=west,open=false",
 			"id": "minecraft:barrel"
@@ -4180,7 +4592,7 @@
 			"file": "smoker.json",
 			"states": {
 				"facing": [ "north", "south", "east", "west" ],
-				"lit": [ "true", "false" ]
+				"lit": [ "false", "true" ]
 			},
 			"default_state": "facing=west,lit=false",
 			"id": "minecraft:smoker"
@@ -4190,7 +4602,7 @@
 			"file": "blast_furnace.json",
 			"states": {
 				"facing": [ "north", "south", "east", "west" ],
-				"lit": [ "true", "false" ]
+				"lit": [ "false", "true" ]
 			},
 			"default_state": "facing=west,lit=false",
 			"id": "minecraft:blast_furnace"
@@ -4260,10 +4672,10 @@
 				"model_double": true,
 				"position": [ 8, 13, 8 ],
 				"rotation": {
-					"facing=east": [ 0, -90, 0 ],
+					"facing=north": [ 0, 0, 0 ],
 					"facing=south": [ 0, 180, 0 ],
-					"facing=west": [ 0, 90, 0 ],
-					"facing=north": [ 0, 0, 0 ]
+					"facing=east": [ 0, -90, 0 ],
+					"facing=west": [ 0, 90, 0 ]
 				}
 			},
 			"id": "minecraft:bell"
@@ -4275,7 +4687,7 @@
 					{ "value": "normal", "file": "lantern.json" },
 					{ "value": "soul_lantern", "file": "soul_lantern.json" }
 				],
-				"hanging": [ "true", "false" ]
+				"hanging": [ "false", "true" ]
 			},
 			"brightness": 0.75,
 			"default_state": "variant=normal,hanging=false",
@@ -4321,12 +4733,12 @@
 			"id": "minecraft:sweet_berry_bush"
 		},
 		{
-			"name": "jigsaw_block",
+			"name": "jigsaw",
 			"file": "jigsaw.json",
 			"states": {
-				"orientation": [ "down_east", "down_north", "down_south", "down_west", "east_up", "north_up", "south_up", "up_east", "up_north", "up_south", "up_west", "west_up" ]
+				"orientation": [ "north_up", "south_up", "east_up", "west_up", "up_north", "up_south", "up_east", "up_west", "down_north", "down_south", "down_east", "down_west" ]
 			},
-			"default_state": "orientation=north_up",
+			"default_state": "orientation=west_up",
 			"id": "minecraft:jigsaw"
 		},
 		{
@@ -4360,7 +4772,7 @@
 			"id": "minecraft:honeycomb_block"
 		},
 		{
-			"name": "target_block",
+			"name": "target",
 			"file": "target.json",
 			"id": "minecraft:target"
 		},
@@ -4407,7 +4819,7 @@
 		{
 			"name": "crimson_roots",
 			"file": "crimson_roots.json",
-			"random_offset": true,
+			"random_offset_xz": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -4424,7 +4836,7 @@
 		{
 			"name": "warped_roots",
 			"file": "warped_roots.json",
-			"random_offset": true,
+			"random_offset_xz": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -4435,7 +4847,7 @@
 		{
 			"name": "nether_sprouts",
 			"file": "nether_sprouts.json",
-			"random_offset": true,
+			"random_offset_xz": true,
 			"light_bleeding": 1,
 			"wind": {
 				"axis": "all",
@@ -4474,14 +4886,16 @@
 			"states": {
 				"variant": [
 					{ "value": "normal", "file": "basalt.json" },
-					{ "value": "polished_basalt", "file": "polished_basalt.json" }
+					{ "value": "polished_basalt", "file": "polished_basalt.json" },
+					{ "value": "smooth_basalt", "file": "smooth_basalt.json" }
 				],
 				"axis": [ "x", "y", "z" ]
 			},
 			"default_state": "variant=normal,axis=y",
 			"id": {
 				"minecraft:basalt": "variant=normal",
-				"minecraft:polished_basalt": "variant=polished_basalt"
+				"minecraft:polished_basalt": "variant=polished_basalt",
+				"minecraft:smooth_basalt": "variant=smooth_basalt"
 			}
 		},
 		{
@@ -4548,12 +4962,365 @@
 		{
 			"name": "chain",
 			"file": "chain.json",
+			"states": {
+				"axis": [ "x", "y", "z" ]
+			},
+			"default_state": "axis=y",
 			"id": "minecraft:chain"
+		},
+		{
+			"name": "candle",
+			"states": {
+				"candles": [ "1", "2", "3", "4" ],
+				"color": [
+					{ "value": "normal", "file": "candle.json" },
+					{ "value": "white", "file": "white_candle.json" },
+					{ "value": "orange", "file": "orange_candle.json" },
+					{ "value": "magenta", "file": "magenta_candle.json" },
+					{ "value": "light_blue", "file": "light_blue_candle.json" },
+					{ "value": "yellow", "file": "yellow_candle.json" },
+					{ "value": "lime", "file": "lime_candle.json" },
+					{ "value": "pink", "file": "pink_candle.json" },
+					{ "value": "gray", "file": "gray_candle.json" },
+					{ "value": "light_gray", "file": "light_gray_candle.json" },
+					{ "value": "cyan", "file": "cyan_candle.json" },
+					{ "value": "purple", "file": "purple_candle.json" },
+					{ "value": "blue", "file": "blue_candle.json" },
+					{ "value": "brown", "file": "brown_candle.json" },
+					{ "value": "green", "file": "green_candle.json" },
+					{ "value": "red", "file": "red_candle.json" },
+					{ "value": "black", "file": "black_candle.json" }
+				],
+				"lit": [ 
+					{ "value": "false" },
+					{ "value": "true", "brightness": 0.5 }
+				]
+			},
+			"default_state": "candles=1,color=normal,lit=false",
+			"id": {
+				"minecraft:candle": "color=normal",
+				"minecraft:white_candle": "color=white",
+				"minecraft:orange_candle": "color=orange",
+				"minecraft:magenta_candle": "color=magenta",
+				"minecraft:light_blue_candle": "color=light_blue",
+				"minecraft:yellow_candle": "color=yellow",
+				"minecraft:lime_candle": "color=lime",
+				"minecraft:pink_candle": "color=pink",
+				"minecraft:gray_candle": "color=gray",
+				"minecraft:light_gray_candle": "color=light_gray",
+				"minecraft:cyan_candle": "color=cyan",
+				"minecraft:purple_candle": "color=purple",
+				"minecraft:blue_candle": "color=blue",
+				"minecraft:brown_candle": "color=brown",
+				"minecraft:green_candle": "color=green",
+				"minecraft:red_candle": "color=red",
+				"minecraft:black_candle": "color=black"
+			}
+		},
+		{
+			"name": "amethyst_block",
+			"states": {
+				"variant": [
+					{ "value": "amethyst_block", "file": "amethyst_block.json" },
+					{ "value": "budding_amethyst", "file": "budding_amethyst.json" }
+				]
+			},
+			"default_state": "variant=amethyst_block",
+			"id": {
+				"minecraft:amethyst_block": "variant=amethyst_block",
+				"minecraft:budding_amethyst": "variant=budding_amethyst"
+			}
+		},
+		{
+			"name": "amethyst",
+			"states": {
+				"variant": [
+					{ "value": "small", "file": "small_amethyst_bud.json" },
+					{ "value": "medium", "file": "medium_amethyst_bud.json" },
+					{ "value": "large", "file": "large_amethyst_bud.json" },
+					{ "value": "cluster", "file": "amethyst_cluster.json" }
+				],
+				"facing": [ "north", "south", "east", "west", "up", "down" ]
+			},
+			"brightness": 0.5,
+			"default_state": "variant=cluster,facing=up",
+			"id": {
+				"minecraft:small_amethyst_bud": "variant=small",
+				"minecraft:medium_amethyst_bud": "variant=medium",
+				"minecraft:large_amethyst_bud": "variant=large",
+				"minecraft:amethyst_cluster": "variant=cluster"
+			}
+		},
+		{
+			"name": "tuff",
+			"file": "tuff.json",
+			"id": "minecraft:tuff"
+		},
+		{
+			"name": "calcite",
+			"file": "calcite.json",
+			"id": "minecraft:calcite"
+		},
+		{
+			"name": "tinted_glass",
+			"file": "tinted_glass.json",
+			"id": "minecraft:tinted_glass"
+		},
+		{
+			"name": "powder_snow",
+			"file": "powder_snow.json",
+			"id": "minecraft:powder_snow"
+		},
+		{
+			"name": "sculk_sensor",
+			"file": "sculk_sensor.json",
+			"states": {
+				"sculk_sensor_phase": [ "active", "cooldown", "inactive" ]
+			},
+			"default_state": "sculk_sensor_phase=inactive",
+			"id": "minecraft:sculk_sensor"
+		},
+		{
+			"name": "copper_ore",
+			"states": {
+				"variant": [
+					{ "value": "copper_ore", "file": "copper_ore.json" },
+					{ "value": "deepslate_copper_ore", "file": "deepslate_copper_ore.json" }
+				]
+			},
+			"default_state": "variant=copper_ore",
+			"id": {
+				"minecraft:copper_ore": "variant=copper_ore",
+				"minecraft:deepslate_copper_ore": "variant=deepslate_copper_ore"
+			}
+		},
+		{
+			"name": "copper_block",
+			"states": {
+				"variant": [
+					{ "value": "copper_block", "file": "copper_block.json" },
+					{ "value": "exposed_copper", "file": "exposed_copper.json" },
+					{ "value": "weathered_copper", "file": "weathered_copper.json" },
+					{ "value": "oxidized_copper", "file": "oxidized_copper.json" },
+					{ "value": "cut_copper", "file": "cut_copper.json" },
+					{ "value": "exposed_cut_copper", "file": "exposed_cut_copper.json" },
+					{ "value": "weathered_cut_copper", "file": "weathered_cut_copper.json" },
+					{ "value": "oxidized_cut_copper", "file": "oxidized_cut_copper.json" },
+					{ "value": "waxed_copper_block", "file": "waxed_copper_block.json" },
+					{ "value": "waxed_exposed_copper", "file": "waxed_exposed_copper.json" },
+					{ "value": "waxed_weathered_copper", "file": "waxed_weathered_copper.json" },
+					{ "value": "waxed_oxidized_copper", "file": "waxed_oxidized_copper.json" },
+					{ "value": "waxed_cut_copper", "file": "waxed_cut_copper.json" },
+					{ "value": "waxed_exposed_cut_copper", "file": "waxed_exposed_cut_copper.json" },
+					{ "value": "waxed_weathered_cut_copper", "file": "waxed_weathered_cut_copper.json" },
+					{ "value": "waxed_oxidized_cut_copper", "file": "waxed_oxidized_cut_copper.json" }
+				]
+			},
+			"default_state": "variant=copper_block",
+			"id": {
+				"minecraft:copper_block": "variant=copper_block",
+				"minecraft:exposed_copper": "variant=exposed_copper",
+				"minecraft:weathered_copper": "variant=weathered_copper",
+				"minecraft:oxidized_copper": "variant=oxidized_copper",
+				"minecraft:cut_copper": "variant=cut_copper",
+				"minecraft:exposed_cut_copper": "variant=exposed_cut_copper",
+				"minecraft:weathered_cut_copper": "variant=weathered_cut_copper",
+				"minecraft:oxidized_cut_copper": "variant=oxidized_cut_copper",
+				"minecraft:waxed_copper_block": "variant=waxed_copper_block",
+				"minecraft:waxed_exposed_copper": "variant=waxed_exposed_copper",
+				"minecraft:waxed_weathered_copper": "variant=waxed_weathered_copper",
+				"minecraft:waxed_oxidized_copper": "variant=waxed_oxidized_copper",
+				"minecraft:waxed_cut_copper": "variant=waxed_cut_copper",
+				"minecraft:waxed_exposed_cut_copper": "variant=waxed_exposed_cut_copper",
+				"minecraft:waxed_weathered_cut_copper": "variant=waxed_weathered_cut_copper",
+				"minecraft:waxed_oxidized_cut_copper": "variant=waxed_oxidized_cut_copper"
+			}
+		},
+		{
+			"name": "lightning_rod",
+			"file": "lightning_rod.json",
+			"states": {
+				"facing": [ "north", "south", "east", "west", "up", "down" ],
+				"powered": [ "false", "true" ]
+			},
+			"default_state": "facing=up,powered=false",
+			"id": "minecraft:lightning_rod"
+		},
+		{
+			"name": "pointed_dripstone",
+			"file": "pointed_dripstone.json",
+			"states": {
+				"thickness": [ "tip", "tip_merge", "frustum", "middle", "base" ],
+				"vertical_direction": [ "up", "down" ]
+			},
+			"default_state": "thickness=tip,vertical_direction=up",
+			"random_offset_xz": true,
+			"id": "minecraft:pointed_dripstone"
+		},
+		{
+			"name": "dripstone_block",
+			"file": "dripstone_block.json",
+			"id": "minecraft:dripstone_block"
+		},
+		{
+			"name": "glow_lichen",
+			"file": "glow_lichen.json",
+			"states": {
+				"north": [ "false", "true" ],
+				"south": [ "false", "true" ],
+				"east": [ "false", "true" ],
+				"west": [ "false", "true" ],
+				"up": [ "false", "true" ],
+				"down": [ "false", "true" ]
+			},
+			"brightness": 0.25,
+			"light_bleeding": 1,
+			"default_state": "north=false,south=false,east=true,west=false,up=false,down=false",
+			"id": "minecraft:glow_lichen"
+		},
+		{
+			"name": "cave_vines",
+			"type": "weeping_vines",
+			"require_models": true,
+			"states": {
+				"type": [
+					{ "value": "cave_vines_plant", "file": "cave_vines_plant.json" },
+					{ "value": "cave_vines", "file": "cave_vines.json" }
+				],
+				"berries": [ 
+					{ "value": "false" },
+					{ "value": "true", "brightness": 0.5 }
+				]
+			},
+			"default_state": "type=cave_vines,berries=false",
+			"light_bleeding": 1,
+			"wind": {
+				"axis": "all"
+			},
+			"id": {
+				"minecraft:cave_vines_plant": "type=cave_vines_plant",
+				"minecraft:cave_vines": "type=cave_vines"
+			}
+		},
+		{
+			"name": "spore_blossom",
+			"file": "spore_blossom.json",
+			"id": "minecraft:spore_blossom"
+		},
+		{
+			"name": "azalea",
+			"states": {
+				"variant": [
+					{ "value": "azalea", "file": "azalea.json" },
+					{ "value": "flowering_azalea", "file": "flowering_azalea.json" }
+				]
+			},
+			"default_state": "variant=azalea",
+			"id": {
+				"minecraft:azalea": "variant=azalea",
+				"minecraft:flowering_azalea": "variant=flowering_azalea"
+			}
+		},
+		{
+			"name": "moss_carpet",
+			"file": "moss_carpet.json",
+			"id": "minecraft:moss_carpet"
+		},
+		{
+			"name": "moss_block",
+			"file": "moss_block.json",
+			"id": "minecraft:moss_block"
+		},
+		{
+			"name": "big_dripleaf",
+			"states": {
+				"type": [
+					{ "value": "big_dripleaf", "file": "big_dripleaf.json" },
+					{ "value": "big_dripleaf_stem", "file": "big_dripleaf_stem.json" }
+				],
+				"facing": [ "north", "south", "east", "west" ],
+				"tilt": [ "none", "unstable", "partial", "full" ]
+			},
+			"default_state": "type=big_dripleaf,facing=west,tilt=none",
+			"id": {
+				"minecraft:big_dripleaf": "type=big_dripleaf",
+				"minecraft:big_dripleaf_stem": "type=big_dripleaf_stem"
+			}
+		},
+		{
+			"name": "small_dripleaf",
+			"file": "small_dripleaf.json",
+			"type": "double_plant",
+			"states": {
+				"half": [ "lower", "upper" ],
+				"facing": [ "north", "south", "east", "west" ]
+			},
+			"default_state": "facing=west",
+			"random_offset": true,
+			"light_bleeding": 1,
+			"wind": {
+				"axis": "all",
+				"ymin": 0
+			},
+			"id": "minecraft:small_dripleaf"
+		},
+		{
+			"name": "hanging_roots",
+			"file": "hanging_roots.json",
+			"random_offset_xz": true,
+			"id": "minecraft:hanging_roots"
+		},
+		{
+			"name": "deepslate",
+			"states": {
+				"variant": [
+					{ "value": "deepslate", "file": "deepslate.json" },
+					{ "value": "cobbled_deepslate", "file": "cobbled_deepslate.json" },
+					{ "value": "polished_deepslate", "file": "polished_deepslate.json" },
+					{ "value": "deepslate_bricks", "file": "deepslate_bricks.json" },
+					{ "value": "cracked_deepslate_bricks", "file": "cracked_deepslate_bricks.json" },
+					{ "value": "deepslate_tiles", "file": "deepslate_tiles.json" },
+					{ "value": "cracked_deepslate_tiles", "file": "cracked_deepslate_tiles.json" },
+					{ "value": "chiseled_deepslate", "file": "chiseled_deepslate.json" }
+				],
+				"axis": [ "x", "y", "z" ]
+			},
+			"default_state": "variant=deepslate,axis=y",
+			"id": {
+				"minecraft:deepslate": "variant=deepslate",
+				"minecraft:cobbled_deepslate": "variant=cobbled_deepslate",
+				"minecraft:polished_deepslate": "variant=polished_deepslate",
+				"minecraft:deepslate_bricks": "variant=deepslate_bricks",
+				"minecraft:cracked_deepslate_bricks": "variant=cracked_deepslate_bricks",
+				"minecraft:deepslate_tiles": "variant=deepslate_tiles",
+				"minecraft:cracked_deepslate_tiles": "variant=cracked_deepslate_tiles",
+				"minecraft:chiseled_deepslate": "variant=chiseled_deepslate"
+			}
+		},
+		{
+			"name": "raw_iron_block",
+			"file": "raw_iron_block.json",
+			"id": "minecraft:raw_iron_block"
+		},
+		{
+			"name": "raw_copper_block",
+			"file": "raw_copper_block.json",
+			"id": "minecraft:raw_copper_block"
+		},
+		{
+			"name": "raw_gold_block",
+			"file": "raw_gold_block.json",
+			"id": "minecraft:raw_gold_block"
 		}
 	],
 	"model_textures": [
 		"entity/alex",
-		"entity/arrow",
+		"entity/armorstand/wood",
+		"entity/axolotl/axolotl_lucy",
+		"entity/axolotl/axolotl_wild",
+		"entity/axolotl/axolotl_gold",
+		"entity/axolotl/axolotl_cyan",
+		"entity/axolotl/axolotl_blue",
 		"entity/banner_base",
 		"entity/banner/base",
 		"entity/banner/border",
@@ -4567,6 +5334,7 @@
 		"entity/banner/diagonal_up_left",
 		"entity/banner/diagonal_up_right",
 		"entity/banner/flower",
+		"entity/banner/globe",
 		"entity/banner/gradient",
 		"entity/banner/gradient_up",
 		"entity/banner/half_horizontal",
@@ -4574,6 +5342,7 @@
 		"entity/banner/half_vertical",
 		"entity/banner/half_vertical_right",
 		"entity/banner/mojang",
+		"entity/banner/piglin",
 		"entity/banner/rhombus",
 		"entity/banner/skull",
 		"entity/banner/small_stripes",
@@ -4594,40 +5363,7 @@
 		"entity/banner/triangle_top",
 		"entity/banner/triangles_bottom",
 		"entity/banner/triangles_top",
-		"entity/banner/globe",
-		"entity/banner/piglin",
 		"entity/bat",
-		"entity/blaze",
-		"entity/chicken",
-		"entity/elytra",
-		"entity/enchanting_table_book",
-		"block/enchanting_table_top",
-		"block/enchanting_table_bottom",
-		"block/enchanting_table_side",
-		"entity/endermite",
-		"entity/guardian",
-		"entity/guardian_elder",
-		"entity/iron_golem/iron_golem",
-		"entity/iron_golem/iron_golem_crackiness_low",
-		"entity/iron_golem/iron_golem_crackiness_medium",
-		"entity/iron_golem/iron_golem_crackiness_high",
-		"entity/lead_knot",
-		"entity/minecart",
-		"entity/shield_base_nopattern",
-		"entity/signs/acacia",
-		"entity/signs/birch",
-		"entity/signs/dark_oak",
-		"entity/signs/jungle",
-		"entity/signs/oak",
-		"entity/signs/crimson",
-		"entity/signs/warped",
-		"entity/signs/spruce",
-		"entity/silverfish",
-		"entity/snow_golem",
-		"entity/squid",
-		"entity/steve",
-		"entity/witch",
-		"entity/armorstand/wood",
 		"entity/bear/polarbear",
 		"entity/bed/black",
 		"entity/bed/blue",
@@ -4645,16 +5381,32 @@
 		"entity/bed/light_gray",
 		"entity/bed/white",
 		"entity/bed/yellow",
+		"entity/bee/bee",
+		"entity/bee/bee_nectar",
+		"entity/bee/bee_angry",
+		"entity/bee/bee_angry_nectar",
+		"entity/bee/bee_stinger",
+		"entity/bell/bell_body",
+		"entity/blaze",
 		"entity/boat/acacia",
 		"entity/boat/birch",
 		"entity/boat/dark_oak",
 		"entity/boat/jungle",
 		"entity/boat/oak",
 		"entity/boat/spruce",
+		"entity/cat/all_black",
 		"entity/cat/black",
+		"entity/cat/british_shorthair",
+		"entity/cat/calico",
+		"entity/cat/cat_collar",
+		"entity/cat/jellie",
 		"entity/cat/ocelot",
+		"entity/cat/persian",
+		"entity/cat/ragdoll",
 		"entity/cat/red",
 		"entity/cat/siamese",
+		"entity/cat/tabby",
+		"entity/cat/white",
 		"entity/chest/christmas",
 		"entity/chest/christmas_left",
 		"entity/chest/christmas_right",
@@ -4665,175 +5417,27 @@
 		"entity/chest/trapped",
 		"entity/chest/trapped_left",
 		"entity/chest/trapped_right",
+		"entity/chicken",
+		"entity/conduit/base",
+		"entity/conduit/cage",
+		"entity/conduit/closed_eye",
+		"entity/conduit/open_eye",
+		"entity/cow/brown_mooshroom",
 		"entity/cow/cow",
 		"entity/cow/red_mooshroom",
-		"block/red_mushroom",
-		"entity/cow/brown_mooshroom",
-		"block/brown_mushroom",
 		"entity/creeper/creeper",
+		"entity/dolphin",
+		"entity/elytra",
+		"entity/enchanting_table_book",
 		"entity/end_crystal/end_crystal",
 		"entity/enderdragon/dragon",
+		"entity/enderdragon/dragon_eyes",
 		"entity/enderman/enderman",
 		"entity/enderman/enderman_eyes",
-		"entity/ghast/ghast",
-		"entity/ghast/ghast_shooting",
-		"entity/horse/donkey",
-		"entity/horse/horse_black",
-		"entity/horse/horse_brown",
-		"entity/horse/horse_chestnut",
-		"entity/horse/horse_creamy",
-		"entity/horse/horse_darkbrown",
-		"entity/horse/horse_gray",
-		"entity/horse/horse_skeleton",
-		"entity/horse/horse_white",
-		"entity/horse/horse_zombie",
-		"entity/horse/mule",
-		"entity/horse/horse_markings_blackdots",
-		"entity/horse/horse_markings_white",
-		"entity/horse/horse_markings_whitedots",
-		"entity/horse/horse_markings_whitefield",
-		"entity/illager/evoker",
-		"entity/illager/evoker_fangs",
-		"entity/illager/illusioner",
-		"entity/illager/vex",
-		"entity/illager/vex_charging",
-		"entity/illager/vindicator",
-		"entity/llama/brown",
-		"entity/llama/creamy",
-		"entity/llama/gray",
-		"entity/llama/white",
-		"entity/llama/decor/black",
-		"entity/llama/decor/blue",
-		"entity/llama/decor/brown",
-		"entity/llama/decor/cyan",
-		"entity/llama/decor/gray",
-		"entity/llama/decor/green",
-		"entity/llama/decor/light_blue",
-		"entity/llama/decor/lime",
-		"entity/llama/decor/magenta",
-		"entity/llama/decor/orange",
-		"entity/llama/decor/pink",
-		"entity/llama/decor/purple",
-		"entity/llama/decor/red",
-		"entity/llama/decor/light_gray",
-		"entity/llama/decor/white",
-		"entity/llama/decor/yellow",
-		"entity/mineimator/camera",
-		"entity/parrot/parrot_blue",
-		"entity/parrot/parrot_green",
-		"entity/parrot/parrot_grey",
-		"entity/parrot/parrot_red_blue",
-		"entity/parrot/parrot_yellow_blue",
-		"entity/pig/pig",
-		"entity/pig/pig_saddle",
-		"entity/projectiles/arrow",
-		"entity/rabbit/black",
-		"entity/rabbit/brown",
-		"entity/rabbit/caerbannog",
-		"entity/rabbit/gold",
-		"entity/rabbit/salt",
-		"entity/rabbit/toast",
-		"entity/rabbit/white",
-		"entity/rabbit/white_splotched",
-		"entity/sheep/sheep",
-		"entity/sheep/sheep_fur",
-		"entity/shulker/shulker",
-		"entity/shulker/shulker_black",
-		"entity/shulker/shulker_blue",
-		"entity/shulker/shulker_brown",
-		"entity/shulker/shulker_cyan",
-		"entity/shulker/shulker_gray",
-		"entity/shulker/shulker_green",
-		"entity/shulker/shulker_light_blue",
-		"entity/shulker/shulker_lime",
-		"entity/shulker/shulker_magenta",
-		"entity/shulker/shulker_orange",
-		"entity/shulker/shulker_pink",
-		"entity/shulker/shulker_purple",
-		"entity/shulker/shulker_red",
-		"entity/shulker/shulker_light_gray",
-		"entity/shulker/shulker_white",
-		"entity/shulker/shulker_yellow",
-		"entity/shulker/spark",
-		"entity/skeleton/skeleton",
-		"entity/skeleton/stray",
-		"entity/skeleton/stray_overlay",
-		"entity/skeleton/wither_skeleton",
-		"entity/slime/magmacube",
-		"entity/slime/slime",
-		"entity/spider/cave_spider",
-		"entity/spider/spider",
-		"entity/villager/villager",
-		"entity/villager/type/plains",
-		"entity/villager/type/desert",
-		"entity/villager/type/snow",
-		"entity/villager/type/taiga",
-		"entity/villager/type/savanna",
-		"entity/villager/type/jungle",
-		"entity/villager/type/swamp",
-		"entity/villager/profession/armorer",
-		"entity/villager/profession/butcher",
-		"entity/villager/profession/cartographer",
-		"entity/villager/profession/cleric",
-		"entity/villager/profession/farmer",
-		"entity/villager/profession/fisherman",
-		"entity/villager/profession/fletcher",
-		"entity/villager/profession/leatherworker",
-		"entity/villager/profession/librarian",
-		"entity/villager/profession/mason",
-		"entity/villager/profession/nitwit",
-		"entity/villager/profession/shepherd",
-		"entity/villager/profession/toolsmith",
-		"entity/villager/profession/weaponsmith",
-		"entity/villager/profession_level/stone",
-		"entity/villager/profession_level/iron",
-		"entity/villager/profession_level/gold",
-		"entity/villager/profession_level/emerald",
-		"entity/villager/profession_level/diamond",
-		"entity/wither/wither",
-		"entity/wither/wither_invulnerable",
-		"entity/wolf/wolf",
-		"entity/wolf/wolf_angry",
-		"entity/wolf/wolf_collar",
-		"entity/wolf/wolf_tame",
-		"entity/zombie/husk",
-		"entity/zombie/zombie",
-		"entity/zombie_villager/zombie_villager",
-		"entity/zombie_villager/type/plains",
-		"entity/zombie_villager/type/desert",
-		"entity/zombie_villager/type/snow",
-		"entity/zombie_villager/type/taiga",
-		"entity/zombie_villager/type/savanna",
-		"entity/zombie_villager/type/jungle",
-		"entity/zombie_villager/type/swamp",
-		"entity/zombie_villager/profession/armorer",
-		"entity/zombie_villager/profession/butcher",
-		"entity/zombie_villager/profession/cartographer",
-		"entity/zombie_villager/profession/cleric",
-		"entity/zombie_villager/profession/farmer",
-		"entity/zombie_villager/profession/fisherman",
-		"entity/zombie_villager/profession/fletcher",
-		"entity/zombie_villager/profession/leatherworker",
-		"entity/zombie_villager/profession/librarian",
-		"entity/zombie_villager/profession/mason",
-		"entity/zombie_villager/profession/nitwit",
-		"entity/zombie_villager/profession/shepherd",
-		"entity/zombie_villager/profession/toolsmith",
-		"entity/zombie_villager/profession/weaponsmith",
-		"entity/zombie_villager/profession_level/stone",
-		"entity/zombie_villager/profession_level/iron",
-		"entity/zombie_villager/profession_level/gold",
-		"entity/zombie_villager/profession_level/emerald",
-		"entity/zombie_villager/profession_level/diamond",
-		"entity/zombie/drowned",
-		"entity/zombie/drowned_outer_layer",
-		"entity/phantom",
-		"entity/phantom_eyes",
-		"entity/turtle/big_sea_turtle",
-		"entity/dolphin",
+		"entity/endermite",
 		"entity/fish/cod",
-		"entity/fish/salmon",
 		"entity/fish/pufferfish",
+		"entity/fish/salmon",
 		"entity/fish/tropical_a",
 		"entity/fish/tropical_a_pattern_1",
 		"entity/fish/tropical_a_pattern_2",
@@ -4848,59 +5452,252 @@
 		"entity/fish/tropical_b_pattern_4",
 		"entity/fish/tropical_b_pattern_5",
 		"entity/fish/tropical_b_pattern_6",
+		"entity/fox/fox",
+		"entity/fox/fox_sleep",
+		"entity/fox/snow_fox",
+		"entity/fox/snow_fox_sleep",
+		"entity/ghast/ghast",
+		"entity/ghast/ghast_shooting",
+		"entity/goat/goat",
+		"entity/guardian",
+		"entity/guardian_elder",
+		"entity/hoglin/hoglin",
+		"entity/hoglin/zoglin",
+		"entity/horse/donkey",
+		"entity/horse/horse_black",
+		"entity/horse/horse_brown",
+		"entity/horse/horse_chestnut",
+		"entity/horse/horse_creamy",
+		"entity/horse/horse_darkbrown",
+		"entity/horse/horse_gray",
+		"entity/horse/horse_markings_blackdots",
+		"entity/horse/horse_markings_white",
+		"entity/horse/horse_markings_whitedots",
+		"entity/horse/horse_markings_whitefield",
+		"entity/horse/horse_skeleton",
+		"entity/horse/horse_white",
+		"entity/horse/horse_zombie",
+		"entity/horse/mule",
+		"entity/illager/evoker",
+		"entity/illager/evoker_fangs",
+		"entity/illager/illusioner",
+		"entity/illager/pillager",
+		"entity/illager/ravager",
+		"entity/illager/vex",
+		"entity/illager/vex_charging",
+		"entity/illager/vindicator",
+		"entity/iron_golem/iron_golem",
+		"entity/iron_golem/iron_golem_crackiness_high",
+		"entity/iron_golem/iron_golem_crackiness_low",
+		"entity/iron_golem/iron_golem_crackiness_medium",
+		"entity/lead_knot",
+		"entity/llama/brown",
+		"entity/llama/creamy",
+		"entity/llama/gray",
+		"entity/llama/spit",
+		"entity/llama/white",
+		"entity/llama/decor/black",
+		"entity/llama/decor/blue",
+		"entity/llama/decor/brown",
+		"entity/llama/decor/cyan",
+		"entity/llama/decor/gray",
+		"entity/llama/decor/green",
+		"entity/llama/decor/light_blue",
+		"entity/llama/decor/light_gray",
+		"entity/llama/decor/lime",
+		"entity/llama/decor/magenta",
+		"entity/llama/decor/orange",
+		"entity/llama/decor/pink",
+		"entity/llama/decor/purple",
+		"entity/llama/decor/red",
+		"entity/llama/decor/trader_llama",
+		"entity/llama/decor/white",
+		"entity/llama/decor/yellow",
+		"entity/minecart",
+		"entity/panda/aggressive_panda",
+		"entity/panda/brown_panda",
+		"entity/panda/lazy_panda",
+		"entity/panda/panda",
+		"entity/panda/playful_panda",
+		"entity/panda/weak_panda",
+		"entity/panda/worried_panda",
+		"entity/parrot/parrot_blue",
+		"entity/parrot/parrot_green",
+		"entity/parrot/parrot_grey",
+		"entity/parrot/parrot_red_blue",
+		"entity/parrot/parrot_yellow_blue",
+		"entity/phantom",
+		"entity/phantom_eyes",
+		"entity/pig/pig",
+		"entity/pig/pig_saddle",
+		"entity/piglin/piglin",
+		"entity/piglin/piglin_brute",
+		"entity/piglin/zombified_piglin",
+		"entity/projectiles/arrow",
+		"entity/projectiles/spectral_arrow",
+		"entity/projectiles/tipped_arrow",
+		"entity/rabbit/black",
+		"entity/rabbit/brown",
+		"entity/rabbit/caerbannog",
+		"entity/rabbit/gold",
+		"entity/rabbit/salt",
+		"entity/rabbit/toast",
+		"entity/rabbit/white",
+		"entity/rabbit/white_splotched",
+		"entity/sheep/sheep",
+		"entity/sheep/sheep_fur",
+		"entity/shield_base_nopattern",
+		"entity/shulker/shulker",
+		"entity/shulker/shulker_black",
+		"entity/shulker/shulker_blue",
+		"entity/shulker/shulker_brown",
+		"entity/shulker/shulker_cyan",
+		"entity/shulker/shulker_gray",
+		"entity/shulker/shulker_green",
+		"entity/shulker/shulker_light_blue",
+		"entity/shulker/shulker_light_gray",
+		"entity/shulker/shulker_lime",
+		"entity/shulker/shulker_magenta",
+		"entity/shulker/shulker_orange",
+		"entity/shulker/shulker_pink",
+		"entity/shulker/shulker_purple",
+		"entity/shulker/shulker_red",
+		"entity/shulker/shulker_white",
+		"entity/shulker/shulker_yellow",
+		"entity/shulker/spark",
+		"entity/signs/acacia",
+		"entity/signs/birch",
+		"entity/signs/crimson",
+		"entity/signs/dark_oak",
+		"entity/signs/jungle",
+		"entity/signs/oak",
+		"entity/signs/spruce",
+		"entity/signs/warped",
+		"entity/silverfish",
+		"entity/skeleton/skeleton",
+		"entity/skeleton/stray",
+		"entity/skeleton/stray_overlay",
+		"entity/skeleton/wither_skeleton",
+		"entity/slime/magmacube",
+		"entity/slime/slime",
+		"entity/snow_golem",
+		"entity/spider_eyes",
+		"entity/spider/cave_spider",
+		"entity/spider/spider",
+		"entity/squid/glow_squid",
+		"entity/squid/squid",
+		"entity/steve",
+		"entity/strider/strider",
+		"entity/strider/strider_cold",
+		"entity/strider/strider_saddle",
 		"entity/trident",
-		"entity/conduit/base",
-		"entity/conduit/cage",
-		"entity/conduit/closed_eye",
-		"block/pumpkin_top",
+		"entity/turtle/big_sea_turtle",
+		"entity/villager/villager",
+		"entity/villager/profession/armorer",
+		"entity/villager/profession/butcher",
+		"entity/villager/profession/cartographer",
+		"entity/villager/profession/cleric",
+		"entity/villager/profession/farmer",
+		"entity/villager/profession/fisherman",
+		"entity/villager/profession/fletcher",
+		"entity/villager/profession/leatherworker",
+		"entity/villager/profession/librarian",
+		"entity/villager/profession/mason",
+		"entity/villager/profession/nitwit",
+		"entity/villager/profession/shepherd",
+		"entity/villager/profession/toolsmith",
+		"entity/villager/profession/weaponsmith",
+		"entity/villager/profession_level/diamond",
+		"entity/villager/profession_level/emerald",
+		"entity/villager/profession_level/gold",
+		"entity/villager/profession_level/iron",
+		"entity/villager/profession_level/stone",
+		"entity/villager/type/desert",
+		"entity/villager/type/jungle",
+		"entity/villager/type/plains",
+		"entity/villager/type/savanna",
+		"entity/villager/type/snow",
+		"entity/villager/type/swamp",
+		"entity/villager/type/taiga",
+		"entity/wandering_trader",
+		"entity/witch",
+		"entity/wither/wither",
+		"entity/wither/wither_invulnerable",
+		"entity/wolf/wolf",
+		"entity/wolf/wolf_angry",
+		"entity/wolf/wolf_collar",
+		"entity/wolf/wolf_tame",
+		"entity/zombie/drowned",
+		"entity/zombie/drowned_outer_layer",
+		"entity/zombie/husk",
+		"entity/zombie/zombie",
+		"entity/zombie_villager/zombie_villager",
+		"entity/zombie_villager/profession/armorer",
+		"entity/zombie_villager/profession/butcher",
+		"entity/zombie_villager/profession/cartographer",
+		"entity/zombie_villager/profession/cleric",
+		"entity/zombie_villager/profession/farmer",
+		"entity/zombie_villager/profession/fisherman",
+		"entity/zombie_villager/profession/fletcher",
+		"entity/zombie_villager/profession/leatherworker",
+		"entity/zombie_villager/profession/librarian",
+		"entity/zombie_villager/profession/mason",
+		"entity/zombie_villager/profession/nitwit",
+		"entity/zombie_villager/profession/shepherd",
+		"entity/zombie_villager/profession/toolsmith",
+		"entity/zombie_villager/profession/weaponsmith",
+		"entity/zombie_villager/profession_level/diamond",
+		"entity/zombie_villager/profession_level/emerald",
+		"entity/zombie_villager/profession_level/gold",
+		"entity/zombie_villager/profession_level/iron",
+		"entity/zombie_villager/profession_level/stone",
+		"entity/zombie_villager/type/desert",
+		"entity/zombie_villager/type/jungle",
+		"entity/zombie_villager/type/plains",
+		"entity/zombie_villager/type/savanna",
+		"entity/zombie_villager/type/snow",
+		"entity/zombie_villager/type/swamp",
+		"entity/zombie_villager/type/taiga",
+		"block/brown_mushroom",
 		"block/carved_pumpkin",
-		"block/pumpkin_side",
 		"block/cobblestone",
+		"block/enchanting_table_top",
+		"block/enchanting_table_bottom",
+		"block/enchanting_table_side",
 		"block/lever",
+		"block/oak_planks",
 		"block/piston_top_sticky",
 		"block/piston_top",
 		"block/piston_side",
 		"block/piston_bottom",
 		"block/piston_inner",
+		"block/pumpkin_top",
+		"block/pumpkin_side",
+		"block/red_mushroom",
 		"block/tripwire_hook",
-		"block/oak_planks",
-		"entity/bell/bell_body",
-		"entity/fox/fox",
-		"entity/fox/fox_sleep",
-		"entity/fox/snow_fox",
-		"entity/fox/snow_fox_sleep",
-		"entity/panda/panda",
-		"entity/panda/brown_panda",
-		"entity/panda/playful_panda",
-		"entity/panda/aggressive_panda",
-		"entity/panda/lazy_panda",
-		"entity/panda/weak_panda",
-		"entity/panda/worried_panda",
-		"entity/illager/ravager",
-		"entity/illager/pillager",
-		"entity/wandering_trader",
-		"entity/llama/decor/trader_llama",
-		"entity/cat/all_black",
-		"entity/cat/british_shorthair",
-		"entity/cat/calico",
-		"entity/cat/jellie",
-		"entity/cat/persian",
-		"entity/cat/ragdoll",
-		"entity/cat/tabby",
-		"entity/cat/white",
-		"entity/cat/cat_collar",
-		"entity/bee/bee",
-		"entity/bee/bee_nectar",
-		"entity/bee/bee_angry",
-		"entity/bee/bee_angry_nectar",
-		"entity/bee/bee_stinger",
-		"entity/piglin/piglin",
-		"entity/piglin/zombified_piglin",
-		"entity/hoglin/hoglin",
-		"entity/hoglin/zoglin",
-		"entity/strider/strider",
-		"entity/strider/strider_cold",
-		"entity/strider/strider_saddle"
+		"item/spyglass_model",
+		"entity/mineimator/camera_tripod",
+		"entity/mineimator/cape_cheapsh0t",
+		"entity/mineimator/cape_cobalt",
+		"entity/mineimator/cape_dannybstyle",
+		"entity/mineimator/cape_julianclark",
+		"entity/mineimator/cape_mapmaker",
+		"entity/mineimator/cape_millionthsale",
+		"entity/mineimator/cape_minecon2011",
+		"entity/mineimator/cape_minecon2012",
+		"entity/mineimator/cape_minecon2013",
+		"entity/mineimator/cape_minecon2015",
+		"entity/mineimator/cape_minecon2016",
+		"entity/mineimator/cape_mojang",
+		"entity/mineimator/cape_mojang_old",
+		"entity/mineimator/cape_moderator",
+		"entity/mineimator/cape_mrmessiah",
+		"entity/mineimator/cape_prismarine",
+		"entity/mineimator/cape_scrollschamp",
+		"entity/mineimator/cape_translator",
+		"entity/mineimator/cape_translator_chinese",
+		"entity/mineimator/cape_turtle",
+		"entity/mineimator/cape_birthday"
 	],
 	"block_textures": [
 		"block/stone",
@@ -5199,6 +5996,7 @@
 		"block/redstone_dust_dot",
 		"block/redstone_dust_line0",
 		"block/redstone_dust_line1",
+		"block/redstone_dust_overlay",
 		"block/lever",
 		"block/redstone_torch_off",
 		"block/redstone_torch",
@@ -5249,7 +6047,6 @@
 		"block/red_sandstone",
 		"block/chiseled_red_sandstone",
 		"block/cut_red_sandstone",
-		"block/prismarine",
 		"block/prismarine_bricks",
 		"block/dark_prismarine",
 		"block/end_rod",
@@ -5264,8 +6061,8 @@
 		"block/beetroots_stage1",
 		"block/beetroots_stage2",
 		"block/beetroots_stage3",
-		"block/grass_path_top",
-		"block/grass_path_side",
+		"block/dirt_path_top",
+		"block/dirt_path_side",
 		"block/frosted_ice_0",
 		"block/frosted_ice_1",
 		"block/frosted_ice_2",
@@ -5529,7 +6326,130 @@
 		"block/chain",
 		"block/cracked_nether_bricks",
 		"block/chiseled_nether_bricks",
-		"block/quartz_bricks"
+		"block/quartz_bricks",
+		"block/candle",
+		"block/candle_lit",
+		"block/white_candle",
+		"block/white_candle_lit",
+		"block/orange_candle",
+		"block/orange_candle_lit",
+		"block/magenta_candle",
+		"block/magenta_candle_lit",
+		"block/light_blue_candle",
+		"block/light_blue_candle_lit",
+		"block/yellow_candle",
+		"block/yellow_candle_lit",
+		"block/lime_candle",
+		"block/lime_candle_lit",
+		"block/pink_candle",
+		"block/pink_candle_lit",
+		"block/gray_candle",
+		"block/gray_candle_lit",
+		"block/light_gray_candle",
+		"block/light_gray_candle_lit",
+		"block/cyan_candle",
+		"block/cyan_candle_lit",
+		"block/purple_candle",
+		"block/purple_candle_lit",
+		"block/blue_candle",
+		"block/blue_candle_lit",
+		"block/brown_candle",
+		"block/brown_candle_lit",
+		"block/green_candle",
+		"block/green_candle_lit",
+		"block/red_candle",
+		"block/red_candle_lit",
+		"block/black_candle",
+		"block/black_candle_lit",
+		"block/amethyst_block",
+		"block/budding_amethyst",
+		"block/amethyst_cluster",
+		"block/large_amethyst_bud",
+		"block/medium_amethyst_bud",
+		"block/small_amethyst_bud",
+		"block/tuff",
+		"block/calcite",
+		"block/tinted_glass",
+		"block/powder_snow",
+		"block/sculk_sensor_bottom",
+		"block/sculk_sensor_side",
+		"block/sculk_sensor_top",
+		"block/copper_ore",
+		"block/copper_block",
+		"block/exposed_copper",
+		"block/weathered_copper",
+		"block/oxidized_copper",
+		"block/cut_copper",
+		"block/exposed_cut_copper",
+		"block/weathered_cut_copper",
+		"block/oxidized_cut_copper",
+		"block/lightning_rod",
+		"block/lightning_rod_on",
+		"block/pointed_dripstone_down_base",
+		"block/pointed_dripstone_down_frustum",
+		"block/pointed_dripstone_down_middle",
+		"block/pointed_dripstone_down_tip",
+		"block/pointed_dripstone_down_tip_merge",
+		"block/pointed_dripstone_up_base",
+		"block/pointed_dripstone_up_frustum",
+		"block/pointed_dripstone_up_middle",
+		"block/pointed_dripstone_up_tip",
+		"block/pointed_dripstone_up_tip_merge",
+		"block/dripstone_block",
+		"block/glow_lichen",
+		"block/cave_vines_plant",
+		"block/cave_vines_plant_lit",
+		"block/cave_vines",
+		"block/cave_vines_lit",
+		"block/spore_blossom",
+		"block/spore_blossom_base",
+		"block/azalea_leaves",
+		"block/azalea_leaves opaque",
+		"block/azalea_plant",
+		"block/azalea_side",
+		"block/azalea_top",
+		"block/flowering_azalea_leaves",
+		"block/flowering_azalea_leaves opaque",
+		"block/flowering_azalea_side",
+		"block/flowering_azalea_top",
+		"block/potted_azalea_bush_plant",
+		"block/potted_azalea_bush_side",
+		"block/potted_azalea_bush_top",
+		"block/potted_flowering_azalea_bush_plant",
+		"block/potted_flowering_azalea_bush_side",
+		"block/potted_flowering_azalea_bush_top",
+		"block/moss_block",
+		"block/big_dripleaf_side",
+		"block/big_dripleaf_stem",
+		"block/big_dripleaf_tip",
+		"block/big_dripleaf_top",
+		"block/small_dripleaf_side",
+		"block/small_dripleaf_stem_bottom",
+		"block/small_dripleaf_stem_top",
+		"block/small_dripleaf_top",
+		"block/rooted_dirt",
+		"block/hanging_roots",
+		"block/deepslate",
+		"block/deepslate_top",
+		"block/cobbled_deepslate",
+		"block/deepslate_bricks",
+		"block/deepslate_tiles",
+		"block/cracked_deepslate_bricks",
+		"block/cracked_deepslate_tiles",
+		"block/polished_deepslate",
+		"block/chiseled_deepslate",
+		"block/deepslate_coal_ore",
+		"block/deepslate_iron_ore",
+		"block/deepslate_lapis_ore",
+		"block/deepslate_gold_ore",
+		"block/deepslate_redstone_ore",
+		"block/deepslate_diamond_ore",
+		"block/deepslate_emerald_ore",
+		"block/deepslate_copper_ore",
+		"block/smooth_basalt",
+		"block/raw_iron_block",
+		"block/raw_copper_block",
+		"block/raw_gold_block"
 	],
 	"block_textures_animated": [
 		"block/water_still",
@@ -5572,11 +6492,13 @@
 		"block/soul_lantern",
 		"block/respawn_anchor_top opaque",
 		"block/soul_campfire_fire",
-		"block/soul_campfire_log_lit"
+		"block/soul_campfire_log_lit",
+		"block/sculk_sensor_tendril_active",
+		"block/sculk_sensor_tendril_inactive"
 	],
 	"block_textures_color": {
-		"block/grass_block_top" : "grass",
-		"block/grass_block_side_overlay" : "grass",
+		"block/grass_block_top": "grass",
+		"block/grass_block_side_overlay": "grass",
 		"block/oak_leaves": "leaves",
 		"block/spruce_leaves": "#62A857",
 		"block/birch_leaves": "#62A857",
@@ -5776,7 +6698,7 @@
 		"item/furnace_minecart",
 		"item/hopper_minecart",
 		"item/spawn_egg_overlay",
-		"item/ruby",
+		"",
 		"item/experience_bottle",
 		"item/brewing_stand",
 		"item/magma_cream",
@@ -5928,6 +6850,54 @@
 		"item/crimson_sign",
 		"item/warped_door",
 		"item/warped_sign",
+		"item/amethyst_shard",
+		"item/copper_ingot",
+		"item/bundle",
+		"item/bundle_filled",
+		"item/powder_snow_bucket",
+		"item/spyglass",
+		"item/candle",
+		"item/white_candle",
+		"item/orange_candle",
+		"item/magenta_candle",
+		"item/light_blue_candle",
+		"item/yellow_candle",
+		"item/lime_candle",
+		"item/pink_candle",
+		"item/gray_candle",
+		"item/light_gray_candle",
+		"item/cyan_candle",
+		"item/purple_candle",
+		"item/blue_candle",
+		"item/brown_candle",
+		"item/green_candle",
+		"item/red_candle",
+		"item/black_candle",
+		"item/pointed_dripstone",
+		"item/axolotl_bucket",
+		"item/glow_ink_sac",
+		"item/glow_item_frame",
+		"item/glow_berries",
+		"item/raw_iron",
+		"item/raw_copper",
+		"item/raw_gold",
+		"item/light",
+		"item/light_00",
+		"item/light_01",
+		"item/light_02",
+		"item/light_03",
+		"item/light_04",
+		"item/light_05",
+		"item/light_06",
+		"item/light_07",
+		"item/light_08",
+		"item/light_09",
+		"item/light_10",
+		"item/light_11",
+		"item/light_12",
+		"item/light_13",
+		"item/light_14",
+		"item/light_15",
 		"",
 		"item/clock_00",
 		"item/clock_01",
@@ -6096,6 +7066,7 @@
 		"particle/glitter_5",
 		"particle/glitter_6",
 		"particle/glitter_7",
+		"particle/glow",
 		"particle/heart",
 		"particle/lava",
 		"particle/nautilus",
@@ -6282,6 +7253,10 @@
 			"texture": "particle/glint"
 		},
 		{
+			"name": "glow",
+			"texture": "particle/glow"
+		},
+		{
 			"name": "heart",
 			"texture": "particle/heart"
 		},
@@ -6306,7 +7281,7 @@
 		{
 			"name": "ocean",
 			"foliage": [ 129, 192 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{ 
 					"name": "normal"
@@ -6316,42 +7291,42 @@
 				},
 				{
 					"name": "frozen_ocean",
-					"water": "#3837C7"
+					"water": "#3938C9"
 				},
 				{
 					"name": "warm_ocean",
-					"water": "#42D2EB"
+					"water": "#43D5EE"
 				},
 				{
 					"name": "lukewarm_ocean",
-					"water": "#44ABEF"
+					"water": "#45ADF2"
 				},
 				{
 					"name": "cold_ocean",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				},
 				{
 					"name": "deep_warm_ocean",
-					"water": "#42D2EB"
+					"water": "#43D5EE"
 				},
 				{
 					"name": "deep_lukewarm_ocean",
-					"water": "#44ABEF"
+					"water": "#45ADF2"
 				},
 				{
 					"name": "deep_cold_ocean",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				},
 				{
 					"name": "deep_frozen_ocean",
-					"water": "#3837C7"
+					"water": "#3938C9"
 				}
 			]
 		},
 		{
 			"name": "plains",
 			"foliage": [ 50, 173 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6372,7 +7347,7 @@
 		{
 			"name": "desert",
 			"foliage": [ 0, 255 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6388,7 +7363,7 @@
 		{
 			"name": "mountains",
 			"foliage": [ 203, 239 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6403,7 +7378,7 @@
 					"name": "gravelly_mountains"
 				},
 				{
-					"name": "gravelly_mountains+"
+					"name": "modified_gravelly_mountains"
 				},
 				{
 					"name": "snowy_mountains"
@@ -6412,8 +7387,8 @@
 		},
 		{
 			"name": "forest",
-			"foliage": [ 75, 110],
-			"water": "#3E75E1",
+			"foliage": [ 75, 110 ],
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6429,7 +7404,7 @@
 		{
 			"name": "taiga",
 			"foliage": [ 242, 244 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6439,11 +7414,11 @@
 				},
 				{
 					"name": "snowy_taiga",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				},
 				{
 					"name": "snowy_taiga_hills",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				},
 				{
 					"name": "giant_tree_taiga"
@@ -6456,10 +7431,10 @@
 				},
 				{
 					"name": "snowy_taiga_mountains",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				},
 				{
-					"name": "giant_spruce_hills"
+					"name": "giant_spruce_taiga"
 				},
 				{
 					"name": "giant_spruce_taiga_hills"
@@ -6469,47 +7444,46 @@
 		{
 			"name": "swamp",
 			"foliage": "#6A7039",
-			"water": "#607A63",
+			"water": "#617B64",
 			"variant": [
 				{
 					"name": "normal"
 				},
 				{
-					"name": "swamp_hills",
-					"water": "#DDFCAC"
+					"name": "swamp_hills"
 				}
 			]
 		},
 		{
 			"name": "river",
 			"foliage": [ 128, 187 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
 				},
 				{
 					"name": "frozen_river",
-					"water": "#3837C7"
+					"water": "#3938C9"
 				}
 			]
 		},
 		{
 			"name": "nether",
 			"foliage": [ 0, 255 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "nether_wastes"
+				},
+				{
+					"name": "soulsand_valley"
 				},
 				{
 					"name": "crimson_forest"
 				},
 				{
 					"name": "warped_forest"
-				},
-				{
-					"name": "soulsand_valley"
 				},
 				{
 					"name": "basalt_deltas"
@@ -6519,7 +7493,7 @@
 		{
 			"name": "the_end",
 			"foliage": [ 127, 189 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6541,7 +7515,7 @@
 		{
 			"name": "mushroom_fields",
 			"foliage": [ 25, 25 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6554,7 +7528,7 @@
 		{
 			"name": "beach",
 			"foliage": [ 60, 191 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6564,14 +7538,14 @@
 				},
 				{
 					"name": "snowy_beach",
-					"water": "#3C56D3"
+					"water": "#3D57D6"
 				}
 			]
 		},
 		{
 			"name": "jungle",
 			"foliage": [ 0, 25 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6587,13 +7561,19 @@
 				},
 				{
 					"name": "modified_jungle_edge"
+				},
+				{
+					"name": "bamboo_jungle"
+				},
+				{
+					"name": "bamboo_jungle_hills"
 				}
 			]
 		},
 		{
 			"name": "birch_forest",
 			"foliage": [ 99, 162 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6612,7 +7592,7 @@
 		{
 			"name": "dark_forest",
 			"foliage": "#507831",
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6625,7 +7605,7 @@
 		{
 			"name": "savanna",
 			"foliage": [ 0, 255 ],
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6645,7 +7625,7 @@
 			"name": "badlands",
 			"grass": "#90814D",
 			"foliage": "#9E814D",
-			"water": "#3E75E1",
+			"water": "#3F76E4",
 			"variant": [
 				{
 					"name": "normal"
@@ -6670,7 +7650,17 @@
 		{
 			"name": "the_void",
 			"foliage": [ 127, 189 ],
-			"water": "#3E75E1"
+			"water": "#3F76E4"
+		},
+		{
+			"name": "dripstone_caves",
+			"foliage": [ 50, 173 ],
+			"water": "#3F76E4"
+		},
+		{
+			"name": "lush_caves",
+			"foliage": [ 50, 173 ],
+			"water": "#3F76E4"
 		}
 	],
 	"banner_patterns": [
