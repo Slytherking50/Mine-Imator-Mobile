@@ -119,6 +119,15 @@ function android_folder_tree_write_file(parent_doc_uri, name, local_path)
 	return false
 }
 
+/// CppSeparate BoolType android_folder_tree_overwrite_file(StringType, StringType)
+/// Writes a local file's bytes into an EXISTING document (found via android_folder_tree_list_*,
+/// not created) - so re-exporting to the same folder updates in place instead of duplicating.
+/// Always false elsewhere.
+function android_folder_tree_overwrite_file(doc_uri, local_path)
+{
+	return false
+}
+
 /// CppSeparate BoolType android_folder_tree_list_first(StringType, StringType)
 /// Starts listing a tree document's children (2026-09-16, import - follow-up to B39). Same
 /// iterator shape as file_find_first/directory_find_first: call this once, then

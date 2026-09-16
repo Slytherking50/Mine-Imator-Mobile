@@ -822,6 +822,59 @@ namespace CppProject
 		return ok;
 	}
 
+	// Overwrite (2026-09-16, follow-up to the "always creates a new document, never checks for
+	// an existing one" limitation noted in KNOWN_ISSUES.md B39) - writes localPath's bytes into
+	// an EXISTING document (found via android_folder_tree_list_*, not created here), so
+	// re-exporting to the same external folder updates files in place instead of duplicating
+	// them. Same body as the second half of android_folder_tree_write_file above (open "wt",
+	// copy bytes, close) minus the createDocument call - duplicated rather than factored out,
+	// same reasoning as this file's other small JNI helpers (see JniExceptionCleaner).
+	BoolType android_folder_tree_overwrite_file(StringType docUriStr, StringType localPath)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate docUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(docUriStr.QStr()).object());
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		QFile src(localPath);
+		if (!src.open(QFile::ReadOnly))
+		{
+			DEBUG("android_folder_tree_overwrite_file: could not open local file " + localPath.QStr());
+			return false;
+		}
+		QByteArray bytes = src.readAll();
+		src.close();
+
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			docUri.object(), QJNIObjectPrivate::fromString("wt").object());
+
+		if (exceptionCleaner.clean() || !pfd.isValid())
+		{
+			DEBUG("android_folder_tree_overwrite_file: could not open " + docUriStr.QStr());
+			return false;
+		}
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+			return false;
+
+		QFile out;
+		bool ok = false;
+		if (out.open(fd, QFile::WriteOnly | QFile::Truncate, QFile::DontCloseHandle))
+		{
+			ok = (out.write(bytes) == bytes.size());
+			out.close();
+		}
+
+		pfd.callMethod<void>("close");
+		return ok;
+	}
+
 	// Import (2026-09-16, follow-up to B39/KNOWN_ISSUES.md - "no hay forma de importar un
 	// proyecto DESDE una carpeta externa") - the reverse direction: enumerate an externally
 	// picked tree's children and copy them into a new local project folder. Same iterator shape
