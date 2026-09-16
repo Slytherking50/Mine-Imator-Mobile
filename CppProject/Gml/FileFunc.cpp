@@ -821,6 +821,199 @@ namespace CppProject
 		pfd.callMethod<void>("close");
 		return ok;
 	}
+
+	// Import (2026-09-16, follow-up to B39/KNOWN_ISSUES.md - "no hay forma de importar un
+	// proyecto DESDE una carpeta externa") - the reverse direction: enumerate an externally
+	// picked tree's children and copy them into a new local project folder. Same iterator shape
+	// as file_find_first/_next/_close and directory_find_first/_next/_close (B37) - one cursor
+	// open at a time, walked with _first()/_next(), read with the _name()/_uri()/_is_dir()
+	// getters below rather than packing 3 values into one delimited string.
+	QJNIObjectPrivate androidFolderTreeListCursor;
+	QJNIObjectPrivate androidFolderTreeListTreeUri;
+
+	void android_folder_tree_list_close()
+	{
+		if (androidFolderTreeListCursor.isValid())
+			androidFolderTreeListCursor.callMethod<void>("close");
+		androidFolderTreeListCursor = QJNIObjectPrivate();
+		androidFolderTreeListTreeUri = QJNIObjectPrivate();
+	}
+
+	BoolType android_folder_tree_list_first(StringType treeUriStr, StringType parentDocUriStr)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		android_folder_tree_list_close();
+
+		androidFolderTreeListTreeUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(treeUriStr.QStr()).object());
+
+		QJNIObjectPrivate parentDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(parentDocUriStr.QStr()).object());
+
+		QJNIObjectPrivate parentDocId = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "getDocumentId",
+			"(Landroid/net/Uri;)Ljava/lang/String;", parentDocUri.object());
+
+		if (exceptionCleaner.clean() || !parentDocId.isValid())
+		{
+			DEBUG("android_folder_tree_list_first: getDocumentId failed for " + parentDocUriStr.QStr());
+			return false;
+		}
+
+		QJNIObjectPrivate childrenUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "buildChildDocumentsUriUsingTree",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/net/Uri;",
+			androidFolderTreeListTreeUri.object(), parentDocId.object());
+
+		if (exceptionCleaner.clean() || !childrenUri.isValid())
+		{
+			DEBUG("android_folder_tree_list_first: buildChildDocumentsUriUsingTree failed");
+			return false;
+		}
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		// Explicit 3-column projection (document_id, display name, MIME type) - the 3 things
+		// _name()/_uri()/_is_dir() below need, same columns android_resolve_content_uri already
+		// uses individually elsewhere in this file. QJNIEnvironmentPrivate's operator-> (same
+		// accessor JniExceptionCleaner already uses above) rather than an implicit JNIEnv*
+		// conversion, to stay on the one JNIEnv access pattern already proven in this file.
+		QJNIEnvironmentPrivate jniEnv;
+		jclass stringClass = jniEnv->FindClass("java/lang/String");
+		jobjectArray columns = jniEnv->NewObjectArray(3, stringClass, nullptr);
+		jniEnv->SetObjectArrayElement(columns, 0, jniEnv->NewStringUTF("document_id"));
+		jniEnv->SetObjectArrayElement(columns, 1, jniEnv->NewStringUTF("_display_name"));
+		jniEnv->SetObjectArrayElement(columns, 2, jniEnv->NewStringUTF("mime_type"));
+
+		androidFolderTreeListCursor = contentResolver.callObjectMethod("query",
+			"(Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;",
+			childrenUri.object(), columns, nullptr, nullptr, nullptr);
+
+		jniEnv->DeleteLocalRef(columns);
+
+		if (exceptionCleaner.clean() || !androidFolderTreeListCursor.isValid())
+		{
+			DEBUG("android_folder_tree_list_first: query failed for " + parentDocUriStr.QStr());
+			android_folder_tree_list_close();
+			return false;
+		}
+
+		if (!androidFolderTreeListCursor.callMethod<jboolean>("moveToFirst"))
+		{
+			android_folder_tree_list_close();
+			return false;
+		}
+
+		return true;
+	}
+
+	BoolType android_folder_tree_list_next()
+	{
+		if (!androidFolderTreeListCursor.isValid())
+			return false;
+		return androidFolderTreeListCursor.callMethod<jboolean>("moveToNext");
+	}
+
+	StringType android_folder_tree_list_name()
+	{
+		if (!androidFolderTreeListCursor.isValid())
+			return "";
+		jint col = androidFolderTreeListCursor.callMethod<jint>("getColumnIndex",
+			"(Ljava/lang/String;)I", QJNIObjectPrivate::fromString("_display_name").object());
+		if (col < 0)
+			return "";
+		return androidFolderTreeListCursor.callObjectMethod("getString", "(I)Ljava/lang/String;", col).toString();
+	}
+
+	BoolType android_folder_tree_list_is_dir()
+	{
+		if (!androidFolderTreeListCursor.isValid())
+			return false;
+		jint col = androidFolderTreeListCursor.callMethod<jint>("getColumnIndex",
+			"(Ljava/lang/String;)I", QJNIObjectPrivate::fromString("mime_type").object());
+		if (col < 0)
+			return false;
+		QString mime = androidFolderTreeListCursor.callObjectMethod("getString", "(I)Ljava/lang/String;", col).toString();
+		return mime == "vnd.android.document/directory";
+	}
+
+	StringType android_folder_tree_list_uri()
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		if (!androidFolderTreeListCursor.isValid() || !androidFolderTreeListTreeUri.isValid())
+			return "";
+
+		jint col = androidFolderTreeListCursor.callMethod<jint>("getColumnIndex",
+			"(Ljava/lang/String;)I", QJNIObjectPrivate::fromString("document_id").object());
+		if (col < 0)
+			return "";
+
+		QJNIObjectPrivate docId = androidFolderTreeListCursor.callObjectMethod("getString", "(I)Ljava/lang/String;", col);
+		if (!docId.isValid())
+			return "";
+
+		QJNIObjectPrivate docUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "buildDocumentUriUsingTree",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/net/Uri;",
+			androidFolderTreeListTreeUri.object(), docId.object());
+
+		if (exceptionCleaner.clean() || !docUri.isValid())
+			return "";
+
+		return docUri.callObjectMethod("toString", "()Ljava/lang/String;").toString();
+	}
+
+	// Reads a document's bytes into a real local file - the reverse of
+	// android_folder_tree_write_file, same ParcelFileDescriptor approach
+	// android_resolve_content_uri (above) already uses for a single picked document.
+	BoolType android_folder_tree_read_file(StringType docUriStr, StringType localPath)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate docUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(docUriStr.QStr()).object());
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			docUri.object(), QJNIObjectPrivate::fromString("r").object());
+
+		if (exceptionCleaner.clean() || !pfd.isValid())
+		{
+			DEBUG("android_folder_tree_read_file: could not open " + docUriStr.QStr());
+			return false;
+		}
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+			return false;
+
+		QFile src;
+		bool ok = false;
+		if (src.open(fd, QFile::ReadOnly, QFile::DontCloseHandle))
+		{
+			QByteArray bytes = src.readAll();
+			src.close();
+
+			QFile dst(localPath);
+			if (dst.open(QFile::WriteOnly | QFile::Truncate))
+			{
+				ok = (dst.write(bytes) == bytes.size());
+				dst.close();
+			}
+		}
+
+		pfd.callMethod<void>("close");
+		return ok;
+	}
 #endif
 }
 
