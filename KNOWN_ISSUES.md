@@ -1,5 +1,33 @@
 # Known issues
 
+## B38: Audit completo de atajos de teclado sin equivalente táctil (CLAUDE.md §6.4) — cerrado (2026-09-16). Un hallazgo real: multi-selección imposible por touch
+
+**Estado: auditoría completa de los ~78 call sites de `keyboard_check`/`keyboard_check_pressed` del proyecto. La mayoría son pérdidas seguras (ya cubiertas por otro camino, o el gesto primario que modifican ya está perdido de por sí). Un hallazgo real y significativo, sin resolver: no hay forma de multi-seleccionar objetos ni keyframes por touch.**
+
+Solo se había resuelto `vk_escape`/Back (mapeado a botón físico Android, sesión anterior). Quedaba pendiente el resto — inventario completo, leyendo cada sitio real, no solo contando por grep:
+
+**Cerrado, sin acción necesaria (13 sitios, ya cubiertos o inofensivos):**
+- **F1-F4** (`app_event_step.gml`) y **F7/F9/F10** (`app_update_keyboard.gml`): todos gateados por `dev_mode` (`macros.gml`, `false` en release) — código muerto en CUALQUIER plataforma, no solo Android. Nada que perder.
+- **Ctrl+X/C/A en textboxes** (`textbox_draw.gml`, 4 sitios): investigado a fondo porque parecía el hueco más serio — **no lo es**. `textbox_draw.gml:65` ya registra cada textbox en `context_menu_area()` (el mismo mecanismo de long-press adaptado a touch desde 2026-09-11), y `list_init_context_menu.gml:89-101` (`"contextmenutextbox"`) ya tiene Cortar/Copiar/Pegar/Seleccionar todo como opciones de ese menú, llamando a los mismos `action_textbox_cut/copy/paste/select_all` que los atajos de teclado. Long-press en cualquier campo de texto ya da acceso completo a las 4 acciones — no diferido, ya funciona.
+- **F11/F12** (`app_update_keyboard.gml`): abrir `log.txt` / toggle de overlay de debug — únicos 2 atajos NO gateados por `dev_mode` sin cobertura táctil. Alcance menor (utilidad de power-user/debug, no una función central), se documentan como pérdida aceptada por `CLAUDE.md` §13.2 ("atajos de teclado → UI, o se pierden. Documentar cada pérdida") en vez de construir una UI nueva para esto.
+- **Flechas arriba/abajo + Enter/Escape en menús** (`menu_draw.gml:273-294`): navegación de dropdown por teclado — en touch el usuario ya toca el ítem directo (camino existente, sin cambios), así que perderse esto es inofensivo por diseño, no una regresión.
+- **Shift+click derecho en los 7 `view_control_*.gml`** (gizmos: mover/rotar/escalar, resetea el eje a su valor por defecto): modifica un gesto (`mouse_right_pressed`) que YA está perdido en touch de por sí (no hay click derecho real) — no es una pérdida NUEVA, va empaquetado con esa pérdida ya conocida.
+- **Shift en `app_place.gml:50`** (toggle temporal de snap-to-grid al colocar) y **Shift en `action_bench_create.gml:268`** (saltear el modo "colocar" al crear): conveniencias de precisión para power-users, no funcionalidad central — el comportamiento default (con/sin snap, con placement) sigue andando igual sin el modificador. Pérdida aceptada.
+- **Ctrl+rueda en `draw_button_menu.gml:281`** y el gate `!keyboard_check(vk_control)` de `scrollbar_draw.gml:110`: ambos dependen de `mouse_wheel`, que no se sintetiza desde touch (el swipe-scroll táctil de `scrollbar_draw.gml` es un camino aparte, ya adaptado desde 2026-09-11, y no pasa por acá). Inalcanzables en Android de por sí, nada que perder.
+
+**Abierto, hallazgo real — no resuelto en esta sesión, necesita una decisión de diseño (no es mecánico):**
+
+**No hay forma de multi-seleccionar por touch — ni objetos en la lista de timeline, ni keyframes.** Confirmado leyendo el código real, no solo por el nombre de la variable:
+- `action_tl_select.gml:28,54` — sin Shift, cada click BORRA la selección anterior y selecciona solo lo nuevo (`if (!shift) tl_deselect_all()`). Es el único mecanismo para seleccionar más de un objeto a la vez.
+- `action_tl_select_keyframes.gml` (y las 5 variantes: `_first`/`_last`/`_before_marker`/`_after_marker`/`_region`) — mismo patrón exacto para keyframes.
+- `action_tl_keyframes_select_area.gml`/`action_tl_select_area.gml` — selección de área (rubber-band) también usa `keyboard_check(vk_control)` para decidir si suma o reemplaza la selección existente.
+- `view_click.gml:28,40` — clickear un objeto en el viewport con Ctrl selecciona el hijo exacto en vez de subir al padre del grupo; sin Shift, clickear el vacío deselecciona todo.
+- `tab_timeline.gml` (8 sitios más: líneas 1283, 1335, 1345, 1485-1522, 1810, 1818) — el mismo patrón repetido en distintos puntos de interacción del timeline.
+
+Con `keyboard_check(vk_shift)`/`vk_control` siempre `false` en Android (no hay teclado físico), el resultado práctico es: **cada tap reemplaza la selección entera.** Se puede editar un objeto/keyframe a la vez, pero no aplicar una acción (mover, borrar, cambiar color) a varios de una — una limitación real de flujo de trabajo, no cosmética.
+
+**Por qué no se implementó ya:** hay más de un patrón táctil razonable para esto (un botón "modo selección múltiple" persistente en la barra; long-press para entrar en modo selección y luego tap para sumar; un checkbox por ítem cuando hay una selección activa) y `CLAUDE.md` §1.2 marca justo este caso como gate G4 ("dos o más caminos razonables y la evidencia no decide"). Ninguno se evaluó ni se construyó — queda para cuando el usuario decida cuál prefiere.
+
 ## B37: Fase 5 (I/O) — "Guardar como"/"Nuevo proyecto" no podían elegir carpeta en Android — IMPLEMENTADO 2026-09-16, pendiente de prueba en dispositivo real
 
 **Estado: código completo, compila y linkea limpio (build nativo Android real, sin instalar en ningún dispositivo — a pedido explícito del usuario, "no como apk en mi móvil"). Sin verificación en pantalla real todavía.**
