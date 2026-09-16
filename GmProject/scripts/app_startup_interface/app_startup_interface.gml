@@ -9,6 +9,9 @@ function app_startup_interface()
 	// "mode" toggle would surprise the user less by resetting than by persisting silently.
 	touch_multiselect = false
 
+	// Whether an android_pick_folder_tree() is in flight (2026-09-16, action_project_export_external.gml)
+	android_export_pending = false
+
 	app_startup_shortcut_bar()
 	app_startup_interface_bench()
 	app_startup_interface_timeline()

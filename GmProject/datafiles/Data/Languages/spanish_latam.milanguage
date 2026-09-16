@@ -478,6 +478,8 @@
 		"newfolder": "Nombre de la nueva carpeta",
 		"select": "Usar esta carpeta"
 	},
+	"toastexportexternalsuccess": "Proyecto exportado",
+	"toastexportexternalfail": "No se pudo exportar el proyecto - pueden faltar algunos archivos",
 	"toolbar/": {
 		"file": "Archivo",
 		"file/": {
@@ -487,6 +489,7 @@
 			"lastbackup": "Recuperar última copia de seguridad",
 			"save": "Guardar proyecto",
 			"saveas": "Guardar proyecto como...",
+			"exportexternal": "Exportar a carpeta externa...",
 			"import": "Importar recurso...",
 			"worldimport": "Importar desde mundo..."
 		},

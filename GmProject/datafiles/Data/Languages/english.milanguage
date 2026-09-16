@@ -478,6 +478,8 @@
 		"newfolder": "New folder name",
 		"select": "Use this folder"
 	},
+	"toastexportexternalsuccess": "Project exported",
+	"toastexportexternalfail": "Could not export the project - some files may be missing",
 	"toolbar/": {
 		"file": "File",
 		"file/": {
@@ -487,6 +489,7 @@
 			"lastbackup": "Recover last backup",
 			"save": "Save project",
 			"saveas": "Save project as...",
+			"exportexternal": "Export to external folder...",
 			"import": "Import asset...",
 			"worldimport": "Import from world..."
 		},
