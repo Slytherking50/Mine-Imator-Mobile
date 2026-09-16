@@ -470,6 +470,13 @@
 		"namedefault": "New project",
 		"create": "Create project"
 	},
+	"folderpicker/": {
+		"caption": "Change project folder",
+		"up": "Up one folder",
+		"empty": "No subfolders here",
+		"newfolder": "New folder name",
+		"select": "Use this folder"
+	},
 	"toolbar/": {
 		"file": "File",
 		"file/": {

@@ -43,6 +43,11 @@ private:
 namespace CppProject
 {
 	QDirIterator* fileFindIt = nullptr;
+	// Separate iterator/instance from fileFindIt above (2026-09-16, Fase 5/B37) - directory_find_*
+	// and file_find_* enumerate different QDir::Filter sets (Dirs vs Files) and neither caller
+	// nests calls to the other today, but keeping them independent avoids a subtle bug if that
+	// ever changes (one find_next() call silently stealing the other's cursor).
+	QDirIterator* dirFindIt = nullptr;
 
 	BoolType file_delete(StringType file)
 	{
@@ -78,6 +83,37 @@ namespace CppProject
 	{
 		if (fileFindIt && fileFindIt->hasNext())
 			return filename_name(fileFindIt->next());
+		return "";
+	}
+
+	// directory_find_first/_next/_close (2026-09-16, Fase 5/B37): no built-in GML/existing lib
+	// function ever enumerated subdirectories - file_find_first above is hardcoded to
+	// QDir::Files, and its "attr" argument (meant to mirror real GameMaker's fa_directory etc.)
+	// was already unused/vestigial before this change (grep confirms fa_directory was never
+	// defined anywhere in this project). Added for the new Android folder picker
+	// (popup_folder_picker_draw.gml) rather than overloading file_find_first's ignored attr
+	// param, to avoid any risk to the existing file-only behavior every other caller of
+	// file_find_first relies on today.
+	void directory_find_close()
+	{
+		deleteAndReset(dirFindIt);
+	}
+
+	StringType directory_find_first(StringType dir)
+	{
+		deleteAndReset(dirFindIt);
+
+		dirFindIt = new QDirIterator(dir, QDir::Dirs | QDir::NoDotAndDotDot);
+		if (dirFindIt->hasNext())
+			return filename_name(dirFindIt->next());
+
+		return "";
+	}
+
+	StringType directory_find_next()
+	{
+		if (dirFindIt && dirFindIt->hasNext())
+			return filename_name(dirFindIt->next());
 		return "";
 	}
 

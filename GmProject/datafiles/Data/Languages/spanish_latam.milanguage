@@ -470,6 +470,13 @@
 		"namedefault": "Nuevo proyecto",
 		"create": "Crear proyecto"
 	},
+	"folderpicker/": {
+		"caption": "Cambiar carpeta del proyecto",
+		"up": "Subir una carpeta",
+		"empty": "No hay subcarpetas acá",
+		"newfolder": "Nombre de la nueva carpeta",
+		"select": "Usar esta carpeta"
+	},
 	"toolbar/": {
 		"file": "Archivo",
 		"file/": {

@@ -27,7 +27,21 @@ function app_startup_interface_popups()
 		tbx_author = new_textbox(true, 0, "")
 		tbx_description = new_textbox(false, 0, "")
 	}
-	
+
+	// Folder picker (Android-only, Fase 5/B37 - "Cambiar carpeta" replacement, see
+	// popup_folder_picker_draw.gml). revert=true (new_popup's 7th arg) so its close/back button
+	// uses the same popup_switch()-remembers-caller mechanism popup_upgrade's sub-pages use,
+	// instead of closing the whole New project/Save as flow underneath it.
+	popup_folder_picker = new_popup("folderpicker", popup_folder_picker_draw, 380, null, true, false, true)
+	with (popup_folder_picker)
+	{
+		path = ""
+		path_scanned = null
+		entries = array()
+		scroll = new_obj(obj_scrollbar)
+		tbx_newfolder = new_textbox(true, 0, "")
+	}
+
 	// Loading
 	popup_loading = new_popup("loading", popup_loading_draw, 400, null, true, true)
 	with (popup_loading)

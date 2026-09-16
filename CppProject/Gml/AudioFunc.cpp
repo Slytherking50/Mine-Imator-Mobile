@@ -107,7 +107,13 @@ namespace CppProject
 	void res_load_audio(ScopeAny self)
 	{
 		obj_resource* res = ObjType(obj_resource, self->id);
-		StringType fname = global::load_folder + "/" + res->filename;
+		// load_folder stays a generic VarType in Generated/Globals.cpp (CppGen's type solver only
+		// resolves 58% of variables, CLAUDE.md §4.3) - "VarType + '/' " is genuinely ambiguous
+		// between VarType::operator+(const StringType&) and a built-in pointer-arithmetic overload,
+		// not resolvable by adding more overloads. VarGetStr() (VarType.hpp:9, already the exact
+		// helper VarType's own operator+(StringType) uses internally) forces the string read
+		// before concatenation, same as every other VarType-to-string site in this codebase.
+		StringType fname = VarGetStr(global::load_folder) + "/" + res->filename;
 		IntType prec = sample_rate_ / sample_avg_per_sec;
 
 		if (res->sound_index)
