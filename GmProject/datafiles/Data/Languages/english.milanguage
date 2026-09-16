@@ -263,7 +263,8 @@
 		"rotate": "Rotate",
 		"scale": "Scale",
 		"bend": "Bend",
-		"transform": "Transform"
+		"transform": "Transform",
+		"multiselect": "Multi"
 	},
 	"startup/": {
 		"trial": "TRIAL",

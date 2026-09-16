@@ -32,7 +32,7 @@ function data_directory_seed_android()
 	directory_create_lib(minecraft_directory)
 	directory_create_lib(load_renders_directory)
 
-	var DATA_BUNDLE_VERSION = 12;
+	var DATA_BUNDLE_VERSION = 13;
 	var DATA_BUNDLE_FILES = [
 		"Fonts/noto_bold.ttf", "Fonts/noto_regular.ttf", "Fonts/noto_semibold.ttf",
 		"Fonts/notomono_regular.ttf", "Fonts/rubik_bold.ttf", "Fonts/rubik_medium.ttf",

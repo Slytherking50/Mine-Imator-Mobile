@@ -37,7 +37,7 @@ function view_click(view, cam)
 			tl_jump(tl)
 	}
 	else
-		if (!keyboard_check(vk_shift))
+		if (!(keyboard_check(vk_shift) || touch_multiselect_active())) // B38, 2026-09-16
 			action_tl_deselect_all()
 	
 	surface_free(surf)

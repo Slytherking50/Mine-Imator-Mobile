@@ -1332,7 +1332,7 @@ function tab_timeline()
 			{
 				if (mousekf.selected)
 				{
-					if (keyboard_check(vk_control)) // Deselect
+					if (keyboard_check(vk_control) || touch_multiselect_active()) // Deselect (B38, 2026-09-16)
 					{
 						action_tl_keyframe_deselect(mousekf.timeline, mousekf)
 						app_mouse_clear()
@@ -1342,7 +1342,7 @@ function tab_timeline()
 				}
 				else if ((tl_keyframe_length(mousekf) != 0 && (timeline_marker >= mousekf.position) && (timeline_marker <= mousekf.position + tl_keyframe_length(mousekf))) || (tl_keyframe_length(mousekf) = 0)) // Select
 				{
-					if (keyboard_check(vk_shift))
+					if (keyboard_check(vk_shift) || touch_multiselect_active()) // B38, 2026-09-16
 						action_tl_keyframe_select(mousekf.timeline, mousekf)
 					else
 						action_tl_keyframe_select_single(mousekf.timeline, mousekf)
@@ -1482,23 +1482,25 @@ function tab_timeline()
 		mouse_cursor = cr_handpoint
 		if (mouse_move > 5) // Select
 		{
-			if (mousetlname && mousetlname.selected && mousetlname.part_of = null && !keyboard_check(vk_shift) && !keyboard_check(vk_control) && tlhierarchy)
+			// || touch_multiselect_active(): B38, 2026-09-16, applies to every vk_shift/vk_control
+			// check in this block (name-list click/drag - same cohesive multi-select interaction).
+			if (mousetlname && mousetlname.selected && mousetlname.part_of = null && !keyboard_check(vk_shift) && !keyboard_check(vk_control) && !touch_multiselect_active() && tlhierarchy)
 				action_tl_move_start()
 			else
 			{
-				if (!keyboard_check(vk_shift) && !keyboard_check(vk_control))
+				if (!keyboard_check(vk_shift) && !keyboard_check(vk_control) && !touch_multiselect_active())
 					action_tl_deselect_all()
 				window_busy = "timelineselect"
 			}
 		}
-		
+
 		if (!mouse_left)
 		{
 			if (timeline_select)
 			{
 				if (timeline_select.selected)
 				{
-					if (keyboard_check(vk_control))
+					if (keyboard_check(vk_control) || touch_multiselect_active())
 						action_tl_deselect(timeline_select)
 					else
 						app_update_tl_edit()
@@ -1519,9 +1521,9 @@ function tab_timeline()
 		mouse_cursor = cr_handpoint
 		if (mouse_move > 5) // Select
 		{
-			if (!keyboard_check(vk_shift) && !keyboard_check(vk_control))
+			if (!keyboard_check(vk_shift) && !keyboard_check(vk_control) && !touch_multiselect_active()) // B38, 2026-09-16
 				action_tl_deselect_all()
-			
+
 			window_busy = "timelineselectkeyframes"
 		}
 		if (!mouse_left) // Move marker, select

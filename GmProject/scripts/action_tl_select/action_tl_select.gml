@@ -25,7 +25,9 @@ function action_tl_select(tl)
 		}
 		else
 		{
-			shift = keyboard_check(vk_shift)
+			// || touch_multiselect_active(): B38, 2026-09-16 - Android has no Shift key to
+			// hold, this stands in for it when the multi-select toggle is on.
+			shift = keyboard_check(vk_shift) || touch_multiselect_active()
 			hobj = history_set(action_tl_select)
 			with (hobj)
 			{

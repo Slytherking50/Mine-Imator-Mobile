@@ -34,7 +34,7 @@ function action_tl_select_keyframes(tl)
 		{
 			var hobj = history_set(action_tl_select_keyframes);
 			
-			shift = keyboard_check(vk_shift)
+			shift = keyboard_check(vk_shift) || touch_multiselect_active() // B38, 2026-09-16
 			with (hobj)
 			{
 				tl_amount = 0
