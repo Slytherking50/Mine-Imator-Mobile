@@ -9,7 +9,7 @@
 	the real package/app name is a pending user decision, not something to bake in here.
 	Replace org.internal.testbuild / "Internal Test Build" before any real distribution.
 -->
-<manifest package="org.internal.testbuild" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="0.0.4" android:versionCode="4" android:installLocation="auto">
+<manifest package="org.internal.testbuild" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="0.0.5" android:versionCode="5" android:installLocation="auto">
 	<!-- %%INSERT_PERMISSIONS -->
 	<!-- %%INSERT_FEATURES -->
 
