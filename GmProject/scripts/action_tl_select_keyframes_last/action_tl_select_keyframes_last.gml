@@ -14,7 +14,7 @@ function action_tl_select_keyframes_last()
 	}
 	else
 	{
-		var shift = keyboard_check(vk_shift);
+		var shift = keyboard_check(vk_shift) || touch_multiselect_active(); // B38, 2026-09-16
 		
 		var hobj;
 		hobj = history_set(action_tl_select_keyframes_last)

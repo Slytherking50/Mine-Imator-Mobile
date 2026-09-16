@@ -26,9 +26,11 @@ function view_toolbar_draw_touch(view, centerx, yy)
 
 	// Same button set/order as view_toolbar_draw.gml's two branches - "|" marks the divider
 	// that branch draws with draw_divide() before its own non-separate-mode Scale button.
+	// "multiselect" appended after its own divider (B38, 2026-09-16) - has no desktop
+	// equivalent (view_toolbar_draw.gml doesn't get it), see touch_multiselect_active.gml.
 	var buttons = setting_separate_tool_modes
-		? ["select", "move", "rotate", "scale", "bend", "transform"]
-		: ["move", "rotate", "bend", "|", "scale"];
+		? ["select", "move", "rotate", "scale", "bend", "transform", "|", "multiselect"]
+		: ["move", "rotate", "bend", "|", "scale", "|", "multiselect"];
 
 	var count = array_length(buttons);
 	var innerwidth = gap * (count - 1);
@@ -139,6 +141,13 @@ function view_toolbar_draw_touch(view, centerx, yy)
 				icon = icons.MULTITRANSFORM
 				labelkey = "viewtoolbartransform"
 				break
+
+			case "multiselect":
+				active = touch_multiselect
+				name = "viewtoolmultiselect"
+				icon = icons.BOX_SELECT
+				labelkey = "viewtoolbarmultiselect"
+				break
 		}
 
 		iconx = bx + (btnwidth - btnsize) / 2
@@ -213,6 +222,10 @@ function view_toolbar_draw_touch(view, centerx, yy)
 				case "transform":
 					action_tools_disable_all()
 					setting_tool_transform = true
+					break
+
+				case "multiselect":
+					touch_multiselect = !touch_multiselect
 					break
 			}
 		}

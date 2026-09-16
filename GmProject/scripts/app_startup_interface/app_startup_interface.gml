@@ -3,7 +3,12 @@
 function app_startup_interface()
 {
 	window_main_restore(setting_main_window_rect, setting_main_window_maximized)
-	
+
+	// Android multi-select mode (B38, 2026-09-16) - runtime-only, deliberately never saved to
+	// settings (see touch_multiselect_active.gml) - always starts off, same as any other
+	// "mode" toggle would surprise the user less by resetting than by persisting silently.
+	touch_multiselect = false
+
 	app_startup_shortcut_bar()
 	app_startup_interface_bench()
 	app_startup_interface_timeline()

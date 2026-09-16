@@ -1255,6 +1255,7 @@
     {"id":{"name":"buffer_save_lib","path":"scripts/buffer_save_lib/buffer_save_lib.yy",},"order":3,},
     {"id":{"name":"directory_create_lib","path":"scripts/directory_create_lib/directory_create_lib.yy",},"order":5,},
     {"id":{"name":"directory_find","path":"scripts/directory_find/directory_find.yy",},"order":6,},
+    {"id":{"name":"touch_multiselect_active","path":"scripts/touch_multiselect_active/touch_multiselect_active.yy",},"order":7,},
     {"id":{"name":"directory_delete_lib","path":"scripts/directory_delete_lib/directory_delete_lib.yy",},"order":7,},
     {"id":{"name":"directory_exists_lib","path":"scripts/directory_exists_lib/directory_exists_lib.yy",},"order":9,},
     {"id":{"name":"execute","path":"scripts/execute/execute.yy",},"order":11,},
