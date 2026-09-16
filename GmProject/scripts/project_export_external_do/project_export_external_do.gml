@@ -8,5 +8,5 @@ function project_export_external_do(tree_uri)
 	if (root_doc = "")
 		return false
 
-	return project_export_external_dir(project_folder + "/", root_doc)
+	return project_export_external_dir(tree_uri, project_folder + "/", root_doc)
 }
