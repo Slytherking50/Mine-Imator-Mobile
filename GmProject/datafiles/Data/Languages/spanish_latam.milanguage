@@ -3596,6 +3596,7 @@
 			"advancedtip": "Acceso a todas las funciones disponibles, recomendado para usuarios avanzados."
 		},
 		"minecraftversion": "Versión de Minecraft",
+		"sharelog": "Compartir log.txt",
 		"backup": "Copias de seguridad automáticas",
 		"backuptime": "Tiempo entre copias de seguridad",
 		"backuptimeminutes": " min",

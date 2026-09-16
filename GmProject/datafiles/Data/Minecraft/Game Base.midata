@@ -8,10 +8,10 @@
 			"version": 0,
 			"states": {
 				"type": [
-					"placeholder"
+					{ "value": "placeholder" }
 				],
 				"variant": [
-					"placeholder"
+					{ "value": "placeholder" }
 				]
 			},
 			"default_state": "type=placeholder,variant=placeholder"
@@ -22,7 +22,7 @@
 			"name": "chest",
 			"states": {
 				"variant": [
-					"placeholder"
+					{ "value": "placeholder" }
 				]
 			},
 			"default_state": "variant=placeholder"

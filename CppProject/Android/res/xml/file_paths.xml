@@ -17,4 +17,14 @@
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
 	<files-path name="updates" path="Mine-imator/updates/"/>
+
+	<!-- "Compartir registro" (2026-09-16, user request - a friend testing on their own device
+		needs a way to get log.txt out, since Android's scoped storage makes the app's internal
+		folder invisible to any file manager, by OS design, regardless of permissions - there's
+		no "enable" switch for that, the real fix is sharing the file directly). Scoped to
+		exactly this one file, not the whole Mine-imator/ folder - FileProvider's path matching
+		is a string-prefix check on the resolved canonical path, and log.txt's own path already
+		starts with itself, so this works as an exact-file root without exposing Projects/ or
+		anything else alongside it. -->
+	<files-path name="log" path="Mine-imator/log.txt"/>
 </paths>

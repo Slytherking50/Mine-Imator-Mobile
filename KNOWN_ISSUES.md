@@ -1,5 +1,19 @@
 # Known issues
 
+## B40: el `Game Base.midata` reconstruido para B36 crasheaba en el amigo del usuario — RESUELTO 2026-09-16, mismo día
+
+**Estado: RESUELTO, verificado por lectura de código (no en dispositivo real, ver "Sin verificar" abajo).**
+
+**Síntoma:** el amigo del usuario probó `v0.0.5` (recién publicada con el `Game Base.midata` reconstruido de B36) y mandó una captura: `[FATAL ERROR] Invalid id 0 in Find:86`, con la pantalla de carga congelada en "LOADING ASSETS GAME BASE... 50%".
+
+**Causa raíz:** el 50% coincide exacto con `minecraft_assets_load.gml`'s `load_assets_stage = "models"` (`load_assets_progress = 0.5`) - la reconstrucción de B36 usaba strings planos para los valores de estado de `characters`/`special_blocks` (`"states": {"type": ["placeholder"]}`), pero `model_load.gml:67` (usado para characters/special_blocks, a diferencia de `block_load.gml` que sí tolera strings planos) hace `value_name[v] = curvalue[?"value"]` **sin ningún chequeo de tipo antes** - asume que cada valor de estado es siempre un objeto/mapa con una clave `"value"`. Contra un string plano, ese `[?...]` (accesor de mapa) explota con exactamente este error.
+
+**Fix:** `characters[0].states`/`special_blocks[0].states` reescritos a `{"value": "placeholder"}` (objetos, no strings), matching el formato real que `model_load.gml` exige. `blocks[0].states` no necesitó cambios - `block_load.gml` sí tolera strings planos.
+
+**Lección para la próxima vez que haga falta tocar este archivo:** `model_load.gml` (characters/special_blocks) y `block_load.gml` (blocks) tienen contratos DISTINTOS para el formato de `states` - uno exige objetos, el otro tolera strings planos. No asumir que ambos aceptan el mismo formato solo porque comparten la palabra "states".
+
+**Sin verificar en dispositivo real todavía** - el fix se razonó leyendo el código real (`model_load.gml`, confirmado el `curvalue[?"value"]` sin guard), no confirmado corriendo la app. Publicado como `v0.0.6` de inmediato dada la urgencia (bloqueaba CUALQUIER prueba del amigo). Ver B36 para el detalle completo de la reconstrucción original.
+
 ## B39: Exportar proyecto a una carpeta externa real (SD, nube sincronizada) — IMPLEMENTADO 2026-09-16, alcance G1 acotado deliberadamente
 
 **Estado: código completo, compila limpio en AMBOS lados (C++ nativo Y Java — primera vez que este proyecto necesitó verificar los dos). Sin verificación en pantalla real, ni siquiera parcial — es la primera feature de la sesión donde ni la compilación ejercita el comportamiento real (ver "Riesgo real" abajo).**

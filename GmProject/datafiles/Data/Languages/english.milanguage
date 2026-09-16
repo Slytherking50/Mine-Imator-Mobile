@@ -3596,6 +3596,7 @@
 			"advancedtip": "Access to all available features, recommended for advanced users."
 		},
 		"minecraftversion": "Minecraft version",
+		"sharelog": "Share log.txt",
 		"backup": "Automatic backups",
 		"backuptime": "Time between backups",
 		"backuptimeminutes": " min",
