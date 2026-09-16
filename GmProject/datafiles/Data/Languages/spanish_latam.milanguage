@@ -480,6 +480,9 @@
 	},
 	"toastexportexternalsuccess": "Proyecto exportado",
 	"toastexportexternalfail": "No se pudo exportar el proyecto - pueden faltar algunos archivos",
+	"toastimportexternalsuccess": "Proyecto importado",
+	"toastimportexternalnoproject": "Se copiaron los archivos, pero no se encontró ningún archivo .miproject",
+	"importexternalname": "Proyecto importado",
 	"toolbar/": {
 		"file": "Archivo",
 		"file/": {
@@ -490,6 +493,7 @@
 			"save": "Guardar proyecto",
 			"saveas": "Guardar proyecto como...",
 			"exportexternal": "Exportar a carpeta externa...",
+			"importexternal": "Importar desde carpeta externa...",
 			"import": "Importar recurso...",
 			"worldimport": "Importar desde mundo..."
 		},

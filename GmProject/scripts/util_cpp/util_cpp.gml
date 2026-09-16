@@ -119,6 +119,62 @@ function android_folder_tree_write_file(parent_doc_uri, name, local_path)
 	return false
 }
 
+/// CppSeparate BoolType android_folder_tree_list_first(StringType, StringType)
+/// Starts listing a tree document's children (2026-09-16, import - follow-up to B39). Same
+/// iterator shape as file_find_first/directory_find_first: call this once, then
+/// android_folder_tree_list_next() until it returns false, reading each entry via the 3
+/// getters below. Always false elsewhere.
+function android_folder_tree_list_first(tree_uri, parent_doc_uri)
+{
+	return false
+}
+
+/// CppSeparate BoolType android_folder_tree_list_next()
+/// Advances to the next child in the current android_folder_tree_list_first() listing. Always
+/// false elsewhere.
+function android_folder_tree_list_next()
+{
+	return false
+}
+
+/// CppSeparate StringType android_folder_tree_list_name()
+/// Display name of the current child in the current listing. Always empty elsewhere.
+function android_folder_tree_list_name()
+{
+	return ""
+}
+
+/// CppSeparate StringType android_folder_tree_list_uri()
+/// Document URI of the current child in the current listing - pass this to
+/// android_folder_tree_read_file()/_list_first() (to recurse into it) or
+/// android_folder_tree_list_is_dir() to tell it apart from a file. Always empty elsewhere.
+function android_folder_tree_list_uri()
+{
+	return ""
+}
+
+/// CppSeparate BoolType android_folder_tree_list_is_dir()
+/// Whether the current child in the current listing is a directory. Always false elsewhere.
+function android_folder_tree_list_is_dir()
+{
+	return false
+}
+
+/// CppSeparate void android_folder_tree_list_close()
+/// Releases the current android_folder_tree_list_first() listing (the underlying Cursor) - call
+/// after a directory's children are done being read, same as file_find_close(). No-op elsewhere.
+function android_folder_tree_list_close()
+{
+}
+
+/// CppSeparate BoolType android_folder_tree_read_file(StringType, StringType)
+/// Reads a document's bytes into a real local file - the reverse of
+/// android_folder_tree_write_file. Always false elsewhere.
+function android_folder_tree_read_file(doc_uri, local_path)
+{
+	return false
+}
+
 /// CppSeparate BoolType android_share_log()
 /// Opens Android's share sheet for log.txt (2026-09-16, user request - a friend testing on
 /// their own device has no other way to get the file out, scoped storage hides it from any

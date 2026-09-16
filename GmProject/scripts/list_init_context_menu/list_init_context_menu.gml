@@ -262,7 +262,12 @@ function list_init_context_menu(name)
 			// ACTION_OPEN_DOCUMENT_TREE, since "Cambiar carpeta" (B37) only reaches inside the
 			// app's own sandbox. No desktop equivalent needed - desktop already writes anywhere.
 			if (platform_get() = e_platform.ANDROID)
+			{
 				list_item_add(text_get("toolbarfileexportexternal"), undefined, "", null, icons.FILE_EXPORT, null, action_project_export_external, true)
+				// The reverse direction - copies an externally picked project INTO a new local
+				// project folder and opens it. Same picker, KNOWN_ISSUES.md B39.
+				list_item_add(text_get("toolbarfileimportexternal"), undefined, "", null, icons.FILE_IMPORT, null, action_project_import_external)
+			}
 
 			if (window_state = "")
 			{
