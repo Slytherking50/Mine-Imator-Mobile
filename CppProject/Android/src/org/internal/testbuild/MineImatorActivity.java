@@ -1,5 +1,7 @@
 package org.internal.testbuild;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -79,6 +81,50 @@ public class MineImatorActivity extends QtActivity
             if (editText != null)
                 editText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN);
         });
+    }
+
+    // External project folder export (2026-09-16, user request) - ACTION_OPEN_DOCUMENT_TREE is
+    // the only way to get a real, persistent, user-picked directory outside the app's own
+    // sandbox under scoped storage (minSdkVersion=29, CLAUDE.md §7.1.1) - unlike the single-file
+    // pickers android_install_apk/get_open_filename_ext already use (startActivity, no result
+    // needed), this one requires startActivityForResult + onActivityResult, both new to this
+    // project. requestCode is an arbitrary app-chosen int (Android convention), only used to
+    // tell "our" result apart from any other activity result in the same Activity - there's
+    // only ever this one pending request in the app, so a single fixed value is enough.
+    private static final int REQUEST_CODE_PICK_FOLDER_TREE = 4201;
+
+    // Implemented in FileFunc.cpp (JNIEXPORT). Name-mangled to this exact package/class -
+    // must move together if org.internal.testbuild is ever renamed (CLAUDE.md §9.3/§9.5).
+    public native void nativeFolderTreePicked(String treeUriString);
+
+    public void pickFolderTree()
+    {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        startActivityForResult(intent, REQUEST_CODE_PICK_FOLDER_TREE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != REQUEST_CODE_PICK_FOLDER_TREE)
+            return;
+
+        if (resultCode != RESULT_OK || data == null || data.getData() == null)
+        {
+            nativeFolderTreePicked(""); // Cancelled - empty string is the "nothing picked" sentinel
+            return;
+        }
+
+        Uri treeUri = data.getData();
+
+        // Without this the permission only lasts until the app process dies - the whole point
+        // of picking an external folder once is to keep writing to it across app restarts.
+        getContentResolver().takePersistableUriPermission(treeUri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+        nativeFolderTreePicked(treeUri.toString());
     }
 
     private static QtEditText findQtEditText(View view)

@@ -256,7 +256,14 @@ function list_init_context_menu(name)
 			
 			list_item_add(text_get("toolbarfilesave"), undefined, text_control_name(keybinds[e_keybind.PROJECT_SAVE].keybind), null, icons.SAVE, null, action_toolbar_save, true)
 			list_item_add(text_get("toolbarfilesaveas"), undefined, text_control_name(keybinds[e_keybind.PROJECT_SAVE_AS].keybind), null, icons.SAVE_AS, null, action_toolbar_save_as)
-			
+
+			// Android-only (2026-09-16, follow-up to B37) - copies the current project out to a
+			// real external folder (SD card, synced cloud folder, etc.) via
+			// ACTION_OPEN_DOCUMENT_TREE, since "Cambiar carpeta" (B37) only reaches inside the
+			// app's own sandbox. No desktop equivalent needed - desktop already writes anywhere.
+			if (platform_get() = e_platform.ANDROID)
+				list_item_add(text_get("toolbarfileexportexternal"), undefined, "", null, icons.FILE_EXPORT, null, action_project_export_external, true)
+
 			if (window_state = "")
 			{
 				list_item_add(text_get("toolbarfileimport"), undefined, text_control_name(keybinds[e_keybind.IMPORT_ASSET].keybind), null, icons.ASSET_IMPORT, null, action_toolbar_import_asset, true)

@@ -44,6 +44,7 @@ function app_event_step()
 		app_update_backup()
 		app_update_recent()
 		app_update_work_camera()
+		app_update_folder_tree_export()
 		
 		if (window_get_current() = e_window.MAIN)
 			app_update_caption()

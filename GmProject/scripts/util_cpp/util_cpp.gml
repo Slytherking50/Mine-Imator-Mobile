@@ -67,6 +67,58 @@ function android_install_apk(path)
 	return false
 }
 
+/// CppSeparate void android_pick_folder_tree()
+/// Opens Android's system folder picker (ACTION_OPEN_DOCUMENT_TREE) so the user can grant a
+/// real, persistent directory outside the app's own sandbox (2026-09-16, follow-up to B37 -
+/// "Cambiar carpeta" only navigates inside working_directory, this is the escape hatch for
+/// exporting a project copy elsewhere - SD card, a synced cloud folder, etc.). No-op elsewhere.
+function android_pick_folder_tree()
+{
+}
+
+/// CppSeparate BoolType android_folder_tree_pick_done()
+/// Whether android_pick_folder_tree()'s picker has returned (cancelled or not) - poll this
+/// before reading android_folder_tree_result(). Always true elsewhere (nothing ever pending).
+function android_folder_tree_pick_done()
+{
+	return true
+}
+
+/// CppSeparate StringType android_folder_tree_result()
+/// The tree document URI from the last android_pick_folder_tree(), once
+/// android_folder_tree_pick_done() is true - empty string if cancelled. Always empty elsewhere.
+function android_folder_tree_result()
+{
+	return ""
+}
+
+/// CppSeparate StringType android_folder_tree_root_doc(StringType)
+/// The root document URI (string) of a tree returned by android_folder_tree_result() - the
+/// starting "parent" for android_folder_tree_create_dir()/_write_file() below. Always empty
+/// elsewhere.
+function android_folder_tree_root_doc(tree_uri)
+{
+	return ""
+}
+
+/// CppSeparate StringType android_folder_tree_create_dir(StringType, StringType)
+/// Creates a child directory (by name) under a document URI, returns its new document URI or
+/// "" on failure. Always creates a fresh document, no existing-child check (KNOWN_ISSUES.md
+/// B37 - re-exporting to the same folder makes a duplicate, not an overwrite). Always empty
+/// elsewhere.
+function android_folder_tree_create_dir(parent_doc_uri, name)
+{
+	return ""
+}
+
+/// CppSeparate BoolType android_folder_tree_write_file(StringType, StringType, StringType)
+/// Creates a child file (by name) under a document URI and copies a local file's bytes into
+/// it. Always false elsewhere.
+function android_folder_tree_write_file(parent_doc_uri, name, local_path)
+{
+	return false
+}
+
 /// CppSeparate IntType touch_count()
 /// Number of simultaneous touch points currently down (Android only; always 0 elsewhere) -
 /// KNOWN_ISSUES.md B10/Trampa 1, Fase 4 pinch/pan gestures.

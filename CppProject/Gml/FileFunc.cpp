@@ -652,4 +652,188 @@ namespace CppProject
 
 		return nstr;
 	}
+
+#if defined(Q_OS_ANDROID)
+	// External project export (2026-09-16, user request, follow-up to B37/KNOWN_ISSUES.md) -
+	// B37's folder picker only navigates inside the app's own sandbox (working_directory);
+	// this adds a real escape hatch to an arbitrary external location (SD card, a synced cloud
+	// folder, etc.) via ACTION_OPEN_DOCUMENT_TREE, the only SAF mechanism that grants a real,
+	// persistent directory outside the sandbox under scoped storage (minSdkVersion=29,
+	// CLAUDE.md §7.1.1). Deliberately NOT wired into setting_project_folder/directory_create_lib/
+	// file_find themselves - those assume real filesystem paths everywhere (dozens of call
+	// sites, CLAUDE.md B4), and content:// tree document ids are not paths. Instead this exports
+	// a COPY of the local project (already real files, same as desktop) out to the chosen tree,
+	// one file/subfolder at a time, reusing the exact byte-copy approach already proven for
+	// single-document content:// destinations (WriteBytesToAndroidContentUri, FileLib.cpp/
+	// Buffer.cpp) - just targeting a freshly created child document instead of a pre-picked one.
+	// Import (the reverse direction) is not implemented yet - see KNOWN_ISSUES.md B37.
+	//
+	// Uses android.provider.DocumentsContract (framework API, always present) rather than the
+	// androidx.documentfile convenience wrapper, to avoid adding a second AndroidX Gradle
+	// dependency beyond androidx.core (B32) - consistent with how every other Android feature in
+	// this project calls the SDK directly via JNI instead of pulling in a wrapper library.
+	//
+	// MineImatorActivity.java's onActivityResult calls nativeFolderTreePicked (the first Java ->
+	// C++ native callback in this project - everything before this was C++ -> Java only) which
+	// just stores the result here; GML polls android_folder_tree_pick_done()/_result() each
+	// frame, the same polling shape already used for other async Android operations in this
+	// codebase (e.g. the auto-update download).
+	QString androidFolderTreePickResult;
+	bool androidFolderTreePickDone = true;
+
+	void android_pick_folder_tree()
+	{
+		androidFolderTreePickDone = false;
+		androidFolderTreePickResult = "";
+
+		QJNIObjectPrivate activity(QtAndroidPrivate::context());
+		activity.callMethod<void>("pickFolderTree", "()V");
+	}
+
+	BoolType android_folder_tree_pick_done()
+	{
+		return androidFolderTreePickDone;
+	}
+
+	StringType android_folder_tree_result()
+	{
+		return androidFolderTreePickResult;
+	}
+
+	// Root document URI (string) of a picked tree - the starting "parent" for
+	// android_folder_tree_create_dir()/_write_file() below.
+	StringType android_folder_tree_root_doc(StringType treeUriStr)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate treeUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(treeUriStr.QStr()).object());
+
+		QJNIObjectPrivate rootDocId = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "getTreeDocumentId",
+			"(Landroid/net/Uri;)Ljava/lang/String;", treeUri.object());
+
+		if (exceptionCleaner.clean() || !rootDocId.isValid())
+		{
+			DEBUG("android_folder_tree_root_doc: getTreeDocumentId failed for " + treeUriStr.QStr());
+			return "";
+		}
+
+		QJNIObjectPrivate rootDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "buildDocumentUriUsingTree",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/net/Uri;",
+			treeUri.object(), rootDocId.object());
+
+		if (exceptionCleaner.clean() || !rootDocUri.isValid())
+			return "";
+
+		return rootDocUri.callObjectMethod("toString", "()Ljava/lang/String;").toString();
+	}
+
+	// Creates a child directory under parentDocUriStr, returns its new document URI (string) or
+	// "" on failure. Always creates a fresh document (no query for an existing child of the same
+	// name, unlike android_resolve_content_uri's Cursor use elsewhere in this file) - re-exporting
+	// to the same external folder makes a duplicate rather than overwriting, a known v1
+	// limitation, see KNOWN_ISSUES.md B37.
+	StringType android_folder_tree_create_dir(StringType parentDocUriStr, StringType name)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate parentDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(parentDocUriStr.QStr()).object());
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		QJNIObjectPrivate newDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "createDocument",
+			"(Landroid/content/ContentResolver;Landroid/net/Uri;Ljava/lang/String;Ljava/lang/String;)Landroid/net/Uri;",
+			contentResolver.object(), parentDocUri.object(),
+			QJNIObjectPrivate::fromString("vnd.android.document/directory").object(),
+			QJNIObjectPrivate::fromString(name.QStr()).object());
+
+		if (exceptionCleaner.clean() || !newDocUri.isValid())
+		{
+			DEBUG("android_folder_tree_create_dir: createDocument failed for " + name.QStr());
+			return "";
+		}
+
+		return newDocUri.callObjectMethod("toString", "()Ljava/lang/String;").toString();
+	}
+
+	// Creates a child file under parentDocUriStr with the given display name, then copies
+	// localPath's bytes into it. MIME type is always application/octet-stream - nothing reads it
+	// back on import (not implemented yet anyway), only bytes + filename matter for round-tripping.
+	BoolType android_folder_tree_write_file(StringType parentDocUriStr, StringType name, StringType localPath)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate parentDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(parentDocUriStr.QStr()).object());
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		QJNIObjectPrivate newDocUri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/provider/DocumentsContract", "createDocument",
+			"(Landroid/content/ContentResolver;Landroid/net/Uri;Ljava/lang/String;Ljava/lang/String;)Landroid/net/Uri;",
+			contentResolver.object(), parentDocUri.object(),
+			QJNIObjectPrivate::fromString("application/octet-stream").object(),
+			QJNIObjectPrivate::fromString(name.QStr()).object());
+
+		if (exceptionCleaner.clean() || !newDocUri.isValid())
+		{
+			DEBUG("android_folder_tree_write_file: createDocument failed for " + name.QStr());
+			return false;
+		}
+
+		QFile src(localPath);
+		if (!src.open(QFile::ReadOnly))
+		{
+			DEBUG("android_folder_tree_write_file: could not open local file " + localPath.QStr());
+			return false;
+		}
+		QByteArray bytes = src.readAll();
+		src.close();
+
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			newDocUri.object(), QJNIObjectPrivate::fromString("wt").object());
+
+		if (exceptionCleaner.clean() || !pfd.isValid())
+			return false;
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+			return false;
+
+		QFile out;
+		bool ok = false;
+		if (out.open(fd, QFile::WriteOnly | QFile::Truncate, QFile::DontCloseHandle))
+		{
+			ok = (out.write(bytes) == bytes.size());
+			out.close();
+		}
+
+		pfd.callMethod<void>("close");
+		return ok;
+	}
+#endif
 }
+
+#if defined(Q_OS_ANDROID)
+// Java -> C++ native callback (the first in this project - see the comment block above
+// android_pick_folder_tree). Name-mangled to org.internal.testbuild.MineImatorActivity - move
+// together if that placeholder package is ever renamed (CLAUDE.md §9.3/§9.5).
+extern "C" JNIEXPORT void JNICALL
+Java_org_internal_testbuild_MineImatorActivity_nativeFolderTreePicked(JNIEnv* env, jobject thiz, jstring treeUriString)
+{
+	const char* chars = env->GetStringUTFChars(treeUriString, nullptr);
+	CppProject::androidFolderTreePickResult = QString::fromUtf8(chars);
+	env->ReleaseStringUTFChars(treeUriString, chars);
+	CppProject::androidFolderTreePickDone = true;
+}
+#endif
