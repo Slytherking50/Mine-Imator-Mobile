@@ -42,16 +42,26 @@ function popup_newproject_draw()
 	
 	tab_control(40)
 	draw_label_value(dx, dy, dw - 28, 40, text_get("newprojectlocation"), directory, true)
-	// Same reasoning as popup_saveas_draw.gml: this button uses the save dialog as a folder
-	// picker, which doesn't map onto Android's SAF (per-document, not per-folder) - hidden on
-	// Android instead of left live and corrupting setting_project_folder (2026-09-15).
-	if (platform_get() != e_platform.ANDROID && draw_button_icon("newprojectchangefolder", dx + dw - 24, dy + 8, 24, 24, false, icons.FOLDER_EDIT, null, false, "tooltipchangefolder"))
+	if (draw_button_icon("newprojectchangefolder", dx + dw - 24, dy + 8, 24, 24, false, icons.FOLDER_EDIT, null, false, "tooltipchangefolder"))
 	{
-		var fn = file_dialog_save_project(popup.folder)
-		if (fn != "")
+		if (platform_get() = e_platform.ANDROID)
 		{
-			popup.folder = filename_name(fn)
-			action_setting_project_folder(filename_path(fn))
+			// Real filesystem folder browser (Fase 5/B37, 2026-09-16) instead of desktop's
+			// save-dialog-as-folder-picker trick, which has no SAF equivalent (see
+			// popup_folder_picker_draw.gml). Was hidden entirely on Android from 2026-09-15
+			// until this replaced it.
+			popup_folder_picker.path = setting_project_folder
+			popup_folder_picker.path_scanned = null
+			popup_switch(popup_folder_picker)
+		}
+		else
+		{
+			var fn = file_dialog_save_project(popup.folder)
+			if (fn != "")
+			{
+				popup.folder = filename_name(fn)
+				action_setting_project_folder(filename_path(fn))
+			}
 		}
 	}
 	tab_next()

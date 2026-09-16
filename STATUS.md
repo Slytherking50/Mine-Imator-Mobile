@@ -162,3 +162,44 @@ Dos pedidos más del usuario, ambos ya implementados y verificados:
 - **Splashes de carga recortados de 26 a 14** (`Data/LoadRenders/renders.json`) — el usuario todavía no mandó sus propios renders; se dejó el espacio (14 entradas) usando 14 de las 26 existentes como placeholder, para reemplazar sin tocar la cuenta cuando lleguen los archivos nuevos.
 
 **Todo lo anterior confirmado por el usuario en el mismo Redmi 10C** ("funciona todo") — con esto, Fase 4 queda cerrada (`CLAUDE.md` §12, `KNOWN_ISSUES.md` KI-4).
+
+## Sesión 2026-09-16 — B22 (HTTPS/OpenSSL), auto-update de punta a punta, primer commit/push del repo, y hallazgo crítico B36
+
+**Contexto:** sesión larga, varios pedidos del usuario en cadena. Cierra con el usuario AFK y una instrucción explícita de seguir avanzando en cosas que no requirieran de él ni de su teléfono.
+
+### Hecho
+
+**B22 (HTTPS) — RESUELTO y verificado en dispositivo real.** Recompilado OpenSSL 3.0.21 para Android arm64 (fix de detección de NDK en `15-android.conf`, problema de rutas cortas 8.3/backslash) y Qt 5.15.19 reconfigurado con `-openssl-linked`. Verificado con tráfico HTTPS real contra `api.github.com` y `mineimator.com` en el Redmi 10C.
+
+**Windows Smart App Control** bloqueaba binarios recién compilados (`moc`/`uic`/`rcc`/`qmake`) — resuelto reusando las herramientas de host de escritorio ya confiables (idénticas, mismo Qt), y además se dejó `signtool.exe` + certificado autofirmado configurado como solución durable a pedido explícito del usuario.
+
+**UX / botón Atrás de Android:** mapeado `Qt::Key_Back` a `vk_escape` (no existía — Android hoy cerraba la app directo, sin pasar por ningún popup). Agregados botones de cerrar/cancelar reales donde antes solo había "Mantené Escape" (ej. exportación) — a pedido explícito del usuario, reemplazando la dependencia de teclado físico.
+
+**B33 (nuevo):** `Shader::BeginUse()` puede fallar en silencio — se agregó chequeo de retorno + log en los 3 sitios que importan (loop de render principal, `RenderFunc.cpp`, blit final de `GLWidget.cpp`). Mitigación, causa raíz sin confirmar.
+
+**Fase 6 (diagnóstico, sin optimizar — a pedido explícito):** instrumentado el arranque completo con `log()` real (no `debug()`, que está gateado por `dev_mode`). Resultado real medido: ~1934ms total, `app_startup_lists` (828ms) y `app_startup_fonts` (514ms) los mayores contribuyentes. Causas raíz identificadas y documentadas en `PERF_LOG.md` (oversampling de `new_transition_texture_map`, rango de glifos 32-1024 en 11 `font_add()`) — **ninguna optimizada**, el usuario eligió quedarse solo con el diagnóstico.
+
+**KI-1:** re-aplicado a pedido de investigar B31 (texto borroso reportado en el celular de un amigo, no el dispositivo de referencia), causó una regresión real y visible (popups/pantalla de carga recortados y reescalados, confirmado por 2 capturas del usuario) — revertido el mismo día. Motivo: varios parches de escala Android posteriores al revert original de 2026-09-09 se afinaron asumiendo la ausencia de este fix.
+
+**CppGen "crasheaba" (B34) — RESUELTO.** Investigación larga (WinDbg instalado y usado por primera vez en este proyecto) terminó en que no era un bug: `CppGen.exe` tiene que correrse con working directory = su propia carpeta (`CppGen/Win64/`), no la raíz del repo — invocarlo desde la raíz rompe el cálculo de rutas y termina en `std::terminate()` sin ningún mensaje útil, antes de su propio manejo de error.
+
+**Primer commit y push del proyecto a control de versiones.** Hasta ahora este repo nunca tuvo git propio. Se agregó identidad local (`Slytherking50` / email noreply de GitHub, `--local`, nunca `--global`), un commit cubriendo ~172 archivos (excluyendo backups, capturas sueltas, y explícitamente `GmProject/datafiles/Data/Minecraft/{Game Base.zip,.midata,current_state.png}` por la sospecha legal ya abierta), y push a un remoto nuevo `mobile` (`github.com/Slytherking50/Mine-Imator-Mobile`, antes completamente vacío) — `origin` sigue apuntando al fork de David Andrei, sin tocar.
+
+**Auto-update, primer test real de punta a punta:**
+- v0.0.2: falló la instalación ("no se pudo abrir el instalador") — B35: `file_paths.xml` declaraba `path="updates/"` en vez de `path="Mine-imator/updates/"` (no coincidía con lo que devuelve `user_directory_get()`). Corregido en v0.0.3.
+- v0.0.3: el usuario probó actualizar y "mismo error" — pero el fix era correcto; el problema era metodológico: la app vieja (v0.0.1) instalada seguía siendo la que ejecutaba el install, nunca se había reemplazado. `adb install -r` directo de v0.0.3, y publicada v0.0.4 para tener un ciclo de auto-update genuinamente probable.
+- Confirmar el resultado de v0.0.4 queda pendiente — necesita el teléfono, bloqueado con el usuario AFK.
+
+**B36 — CRÍTICO, encontrado y confirmado trabajando de forma autónoma (usuario AFK):** investigando el pendiente legal de "Game Base" (señalado a mitad de sesión, pospuesto ese momento a pedido del usuario en favor de un bug visual), se encontró que `Data/Minecraft/Game Base.zip` — el único archivo de esa carpeta que el build de Android empaqueta, por diseño, precisamente porque debía ser 100% generado sin assets de Mojang (B25) — tiene su contenido reescrito desde el 2026-09-12 con el paquete real de texturas de Minecraft 1.20.2 (6.186/6.188 archivos idénticos byte a byte). **Confirmado además, descargando y desensamblando los 3 `.apk` ya publicados** (`gh release download`, solo lectura): `v0.0.2`, `v0.0.3` y `v0.0.4` — las 3 releases públicas de este mismo repo — distribuyen ese contenido ahora mismo. No hay ningún commit ni entrada de sesión del 2026-09-12 que explique cómo pasó; el candidato más probable es un archivo suelto encontrado en la misma carpeta (`Reparado.zip`, contenido idéntico, creado el día anterior). **No se tomó ninguna acción de remediación** — despublicar/reemplazar releases públicas es un `[GATE]` legal y una acción visible para terceros, ninguna de las dos se ejecuta sin confirmación explícita. Detalle completo, con todos los timestamps y hashes: `KNOWN_ISSUES.md` B36, `CLAUDE.md` §8/§17.
+
+### Abierto / a investigar
+- **B36 es la máxima prioridad apenas el usuario vuelva** — ver recomendación completa en `KNOWN_ISSUES.md` B36 (despublicar/reemplazar las 3 releases, restaurar el placeholder legítimo, republicar limpio).
+- Confirmar v0.0.4 con el dispositivo real (auto-update de punta a punta, ver arriba).
+- B30 (crash de skin) — mitigación aplicada, causa raíz sin confirmar, falta el log del celular del amigo.
+- B31 (texto borroso en el celular del amigo) — sigue sin resolver, el intento de fix (KI-1) fue revertido por regresión.
+- Prueba térmica de 10 min (§14.3) — necesita el teléfono.
+- Posición exacta del nuevo botón de cancelar exportación — sin verificar en dispositivo real.
+
+### Próximo paso
+- Presentar B36 al usuario apenas esté disponible — es lo primero que necesita decidir.
+- Con su ok, ejecutar la remediación (despublicar releases, restaurar placeholder, republicar) y recién ahí retomar la verificación de auto-update v0.0.4.

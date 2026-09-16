@@ -42,22 +42,30 @@ function popup_saveas_draw()
 	
 	tab_control(40)
 	draw_label_value(dx, dy, dw - 28, 40, text_get("newprojectlocation"), directory, true)
-	// "Change folder" reuses the save dialog to pick a FOLDER (take the containing directory
-	// of whatever file the user "saves" to) - a desktop file-dialog trick, not something
-	// Android's SAF document picker can do (it hands back one picked document, not a folder
-	// path Mine-imator's own file_find/etc. can read/write against directly - SAF's real
-	// folder equivalent, ACTION_OPEN_DOCUMENT_TREE, is a tree of opaque document ids, not
-	// filesystem paths, and would need every project-folder-reading call site rewritten to
-	// match - out of scope here, tracked as its own gap). Hidden on Android rather than left
-	// live and silently corrupting setting_project_folder into a URI the rest of the app can't
-	// use (2026-09-15, alongside the get_open_filename_ext/Buffer::Save content:// URI fixes).
-	if (platform_get() != e_platform.ANDROID && draw_button_icon("newprojectchangefolder", dx + dw - 24, dy + 8, 24, 24, false, icons.FOLDER_EDIT, null, null, "tooltipchangefolder"))
+	// "Change folder" originally reused the save dialog to pick a FOLDER (take the containing
+	// directory of whatever file the user "saves" to) - a desktop file-dialog trick with no SAF
+	// equivalent (SAF's real folder picker, ACTION_OPEN_DOCUMENT_TREE, hands back a tree of
+	// opaque document ids, not filesystem paths - would need every project-folder call site
+	// rewritten, out of scope). Was hidden entirely on Android (2026-09-15) to avoid corrupting
+	// setting_project_folder with a URI the rest of the app can't use; replaced (2026-09-16,
+	// Fase 5/B37) with a real filesystem folder browser scoped to working_directory - see
+	// popup_folder_picker_draw.gml.
+	if (draw_button_icon("newprojectchangefolder", dx + dw - 24, dy + 8, 24, 24, false, icons.FOLDER_EDIT, null, null, "tooltipchangefolder"))
 	{
-		var fn = file_dialog_save_project(popup.folder)
-		if (fn != "")
+		if (platform_get() = e_platform.ANDROID)
 		{
-			popup.folder = filename_name(fn)
-			action_setting_project_folder(filename_path(fn))
+			popup_folder_picker.path = setting_project_folder
+			popup_folder_picker.path_scanned = null
+			popup_switch(popup_folder_picker)
+		}
+		else
+		{
+			var fn = file_dialog_save_project(popup.folder)
+			if (fn != "")
+			{
+				popup.folder = filename_name(fn)
+				action_setting_project_folder(filename_path(fn))
+			}
 		}
 	}
 	tab_next()

@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-	Auto-update (2026-09-15) - exposes only the "updates/" subfolder of the app's own internal
-	files dir (Context.getFilesDir(), what QDir::homePath() resolves to on Android -
-	user_directory_get() in UtilFunc.cpp, same base directory as log.txt/Projects/ - confirmed
-	via `run-as` all session) as a content:// URI the package installer can read the
-	downloaded APK from. Nothing else under that directory is exposed.
+	Auto-update (2026-09-15) - exposes only the "Mine-imator/updates/" subfolder of the app's
+	own internal files dir as a content:// URI the package installer can read the downloaded
+	APK from. Nothing else under that directory is exposed.
+
+	Fixed 2026-09-16 (KNOWN_ISSUES.md) - this originally declared path="updates/" (bare), on
+	the wrong assumption that QDir::homePath() (what Context.getFilesDir() resolves to on
+	Android) is where the app writes things directly. It isn't: user_directory_get()
+	(UtilFunc.cpp) returns homePath() + "/Mine-imator/" - the SAME base dir as log.txt/
+	Projects/, confirmed via `run-as` all session - so the real downloaded file lives at
+	files/Mine-imator/updates/update.apk, one level deeper than this file declared.
+	FileProvider.getUriForFile() requires the target to be under a declared root or it throws
+	IllegalArgumentException - silently swallowed by android_install_apk()'s JniExceptionCleaner
+	(UpdateFunc.cpp), which is exactly why the very first real end-to-end auto-update test
+	failed with "No se pudo abrir el instalador" and nothing more specific in the log.
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-	<files-path name="updates" path="updates/"/>
+	<files-path name="updates" path="Mine-imator/updates/"/>
 </paths>
