@@ -1,6 +1,20 @@
 # Known issues
 
-## B40: el `Game Base.midata` reconstruido para B36 crasheaba en el amigo del usuario — RESUELTO 2026-09-16, mismo día
+## B41: botón "Compartir log.txt" no respondía — RESUELTO 2026-09-16, mismo día
+
+**Estado: RESUELTO, verificado por lectura de código (no en dispositivo real).**
+
+**Síntoma:** probada la v0.0.6 en dispositivo real (folder picker, multi-selección, export/import externo: todo confirmado funcionando por el usuario) - el único botón que "no respondía" era "Compartir log.txt" (B39's follow-up, no un B numerado aparte hasta ahora).
+
+**Dos causas reales, no una sola:**
+1. **`res/xml/file_paths.xml`** declaraba `path="Mine-imator/log.txt"` (el archivo en sí) en vez de una carpeta - un truco no estándar (la idea era que el chequeo de prefijo de ruta de `FileProvider` tratara una ruta que coincide consigo misma como "adentro" de sí misma). Sin dispositivo para probarlo cuando se escribió, y aparentemente no funciona en la práctica - toda la documentación y todos los ejemplos reales de `FileProvider` declaran una carpeta, nunca un nombre de archivo suelto. Corregido a `path="Mine-imator/"` (toda la carpeta), mismo patrón ya probado y funcionando para `"updates"` arriba en el mismo archivo.
+2. **`tab_settings_program.gml` descartaba el valor de retorno de `android_share_log()`** - si fallaba (por la causa 1, o por cualquier otro motivo), el botón no daba NINGUNA señal, indistinguible de "no responde" incluso si por dentro sí se había intentado algo. Agregado un toast de error cuando falla (el éxito ya es visible por sí solo - se abre el selector de apps de Android).
+
+**Por qué exponer toda la carpeta `Mine-imator/` es seguro igual:** `FileProvider` deja CONSTRUIR una URI para cualquier archivo bajo una raíz declarada, pero nada la expone hasta que el código de la app la pide explícitamente - `android_share_log()` solo pide `log_file`, nunca nada más, así que `Projects/`/`settings.midata`/etc. siguen sin ser alcanzables en la práctica pese a que la raíz declarada ahora los cubre.
+
+**Publicado como `v0.0.7`** junto con el resto de la sesión, sin verificar en dispositivo todavía.
+
+## B40: el `Game Base.midata` reconstruido para B36 crasheaba en el amigo del usuario — RESUELTO Y CONFIRMADO EN DISPOSITIVO REAL 2026-09-16 (usuario probó v0.0.6, arrancó sin el crash)
 
 **Estado: RESUELTO, verificado por lectura de código (no en dispositivo real, ver "Sin verificar" abajo).**
 
@@ -14,7 +28,7 @@
 
 **Sin verificar en dispositivo real todavía** - el fix se razonó leyendo el código real (`model_load.gml`, confirmado el `curvalue[?"value"]` sin guard), no confirmado corriendo la app. Publicado como `v0.0.6` de inmediato dada la urgencia (bloqueaba CUALQUIER prueba del amigo). Ver B36 para el detalle completo de la reconstrucción original.
 
-## B39: Exportar proyecto a una carpeta externa real (SD, nube sincronizada) — IMPLEMENTADO 2026-09-16, alcance G1 acotado deliberadamente
+## B39: Exportar proyecto a una carpeta externa real (SD, nube sincronizada) — IMPLEMENTADO y CONFIRMADO FUNCIONANDO en dispositivo real 2026-09-16 (usuario probó v0.0.6, exportar e importar ambos ok)
 
 **Estado: código completo, compila limpio en AMBOS lados (C++ nativo Y Java — primera vez que este proyecto necesitó verificar los dos). Sin verificación en pantalla real, ni siquiera parcial — es la primera feature de la sesión donde ni la compilación ejercita el comportamiento real (ver "Riesgo real" abajo).**
 
@@ -43,7 +57,7 @@
 
 **Verificado en esta sesión:** CppGen limpio. Build nativo de Android (`cmake --build . --target Mine-imator`) compila y linkea sin errores. **Java compilado por separado** (`gradlew compileDebugJavaWithJavac`, acotado a solo compilación para evitar la trampa T4 del target `apk` completo) — `BUILD SUCCESSFUL`, primera vez que este proyecto verifica el lado Java de un cambio en esta sesión. **NO verificado, y no hay forma de verificarlo sin dispositivo:** todo el comportamiento real descrito arriba. Tampoco se armó ningún APK.
 
-## B38: Audit completo de atajos de teclado sin equivalente táctil (CLAUDE.md §6.4) — cerrado (2026-09-16). Multi-selección: IMPLEMENTADA el mismo día, pendiente de prueba en dispositivo real
+## B38: Audit completo de atajos de teclado sin equivalente táctil (CLAUDE.md §6.4) — cerrado (2026-09-16). Multi-selección: IMPLEMENTADA y CONFIRMADA FUNCIONANDO en dispositivo real el mismo día (usuario probó v0.0.6)
 
 **Estado: auditoría completa de los ~78 call sites de `keyboard_check`/`keyboard_check_pressed` del proyecto. La mayoría son pérdidas seguras (ya cubiertas por otro camino, o el gesto primario que modifican ya está perdido de por sí). El único hallazgo real y significativo (multi-selección imposible por touch) se implementó en la misma sesión, a pedido explícito del usuario ("escoge la más buena en tu criterio") — código completo, compila y linkea limpio, sin verificar en pantalla todavía.**
 
@@ -70,7 +84,7 @@ Solo se había resuelto `vk_escape`/Back (mapeado a botón físico Android, sesi
 
 **Verificado en esta sesión:** CppGen limpio, build nativo de Android completo (`cmake --build . --target Mine-imator`) compila y linkea sin errores. **NO verificado:** nada en pantalla real — ni que el botón aparezca bien, ni que extender/deseleccionar/arrastrar funcione como se espera tocando de verdad. Tampoco se armó ningún APK esta sesión.
 
-## B37: Fase 5 (I/O) — "Guardar como"/"Nuevo proyecto" no podían elegir carpeta en Android — IMPLEMENTADO 2026-09-16, pendiente de prueba en dispositivo real
+## B37: Fase 5 (I/O) — "Guardar como"/"Nuevo proyecto" no podían elegir carpeta en Android — IMPLEMENTADO y CONFIRMADO FUNCIONANDO en dispositivo real 2026-09-16 (usuario probó v0.0.6, capturó el picker navegando carpetas reales)
 
 **Estado: código completo, compila y linkea limpio (build nativo Android real, sin instalar en ningún dispositivo — a pedido explícito del usuario, "no como apk en mi móvil"). Sin verificación en pantalla real todavía.**
 

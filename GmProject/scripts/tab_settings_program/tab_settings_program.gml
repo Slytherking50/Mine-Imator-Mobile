@@ -19,11 +19,19 @@ function tab_settings_program()
 	// Share log.txt (Android-only, 2026-09-16 user request) - scoped storage hides the app's
 	// internal folder from any file manager by OS design, this is the real equivalent of
 	// desktop's F11/open_url(log_file).
+	//
+	// FIXED 2026-09-16, same day - button "no responde" (user report). The return value was
+	// being discarded - on failure (or even on success, before this fix) the button gave
+	// literally no feedback, which reads exactly like "not responding" whether or not the
+	// underlying share Intent actually fired. Success still shows nothing extra here (Android's
+	// own share sheet appearing already IS the feedback for that path) - only failure gets a
+	// toast now, so a silent failure can't be mistaken for the button doing nothing.
 	if (platform_get() = e_platform.ANDROID)
 	{
 		tab_control_button_label()
 		if (draw_button_label("settingssharelog", dx + dw, dy, null, icons.FILE_EXPORT, e_button.SECONDARY, null, e_anchor.RIGHT))
-			android_share_log()
+			if (!android_share_log())
+				toast_new(e_toast.NEGATIVE, text_get("toastsharelogfail"))
 		tab_next()
 	}
 

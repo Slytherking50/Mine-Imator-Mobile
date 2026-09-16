@@ -21,10 +21,21 @@
 	<!-- "Compartir registro" (2026-09-16, user request - a friend testing on their own device
 		needs a way to get log.txt out, since Android's scoped storage makes the app's internal
 		folder invisible to any file manager, by OS design, regardless of permissions - there's
-		no "enable" switch for that, the real fix is sharing the file directly). Scoped to
-		exactly this one file, not the whole Mine-imator/ folder - FileProvider's path matching
-		is a string-prefix check on the resolved canonical path, and log.txt's own path already
-		starts with itself, so this works as an exact-file root without exposing Projects/ or
-		anything else alongside it. -->
-	<files-path name="log" path="Mine-imator/log.txt"/>
+		no "enable" switch for that, the real fix is sharing the file directly).
+
+		FIXED 2026-09-16, same day - the button "no responde" (user report). The first version
+		of this entry declared path="Mine-imator/log.txt" (the file itself, not a directory), on
+		the theory that FileProvider's canonical-path prefix check would treat a path matching
+		itself as "inside" itself. Unverifiable without a device and apparently wrong in
+		practice - FileProvider's own docs and every real-world example declare a DIRECTORY,
+		never a bare filename, and getUriForFile() most likely throws IllegalArgumentException
+		for a target that isn't strictly BELOW the declared root (silently swallowed by
+		JniExceptionCleaner in android_share_log(), same failure shape as the original B35 bug -
+		see that fix in UpdateFunc.cpp for why this class of failure is silent by default).
+		Switched to the whole Mine-imator/ directory, the same convention already proven working
+		for "updates" above. This exposes more than strictly needed (Projects/, settings.midata,
+		etc. could ALSO get a content:// URI built for them), but nothing does that unless app
+		code explicitly asks FileProvider for it - android_share_log() only ever requests
+		log_file specifically, so nothing else actually becomes reachable in practice. -->
+	<files-path name="logs" path="Mine-imator/"/>
 </paths>
