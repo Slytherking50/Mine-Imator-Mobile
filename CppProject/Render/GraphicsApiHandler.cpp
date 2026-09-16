@@ -377,15 +377,32 @@ namespace CppProject
 	{
 		handler = this;
 
+	#ifndef Q_OS_ANDROID
 		QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+	#endif
 		QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
-		// Enable OpenGL 4.3 Core
 		QSurfaceFormat format = QSurfaceFormat::defaultFormat();
 		format.setDepthBufferSize(24);
 		format.setStencilBufferSize(8);
+	#ifdef Q_OS_ANDROID
+		// Confirmed 2026-09-06 (real Android build) then 2026-09-08 (real device): this whole
+		// #else branch (shared with Mac/Linux) was written for desktop GL only, never actually
+		// run on Android until now. AA_UseDesktopOpenGL and version(4,3)/CoreProfile are
+		// desktop-only concepts - "CoreProfile" doesn't exist for ES, and "4.3" gets read as
+		// an ES version request (ES only goes up to 3.2), so EGL had no config to offer and
+		// eglCreateContext failed with EGL_BAD_MATCH (0x3009) - confirmed via logcat on a real
+		// device, QOpenGLWidget never produced a frame (blank window, not a crash). ES 3.0 is
+		// the safe baseline QOpenGLExtraFunctions needs (0.3's replacement for the version-
+		// specific GL classes) and is universally available at minSdk 29; SSBO/batching
+		// (would want ES 3.1) is already Option A - not ported to Android ([GATE G1], §5.1.1).
+		format.setRenderableType(QSurfaceFormat::OpenGLES);
+		format.setVersion(3, 0);
+	#else
+		// Enable OpenGL 4.3 Core
 		format.setVersion(4, 3);
 		format.setProfile(QSurfaceFormat::CoreProfile);
+	#endif
 	#if DEBUG_MODE
 		format.setOption(QSurfaceFormat::DebugContext);
 	#endif
@@ -394,7 +411,13 @@ namespace CppProject
 
 	void GraphicsApiHandler::Init()
 	{
-		if (isInitialized())
+		// QOpenGLExtraFunctions has no public isInitialized() (QOpenGLFunctions_3_1, replaced
+		// in 0.3, did) - glContext is null exactly until the first Init() call below sets it,
+		// so it already serves as the idempotency guard without needing Qt's internal state.
+		// Not Android-specific: this is the shared OpenGL path (Mac/Linux/Android), never
+		// compiled anywhere in this project until a real Android build attempt (2026-09-06) -
+		// Windows takes the D3D11 branch instead, so this was a latent bug, not a new one.
+		if (glContext)
 			return;
 
 		// Find version
@@ -402,11 +425,25 @@ namespace CppProject
 		glVersion = NumStr(glContext->format().version().first) + "." + NumStr(glContext->format().version().second);
 		DEBUG("OpenGL version: " + glVersion);
 
-		if (!initializeOpenGLFunctions())
-			FATAL("Could not initialize OpenGL, version is " + glVersion);
+		// QOpenGLExtraFunctions inherits the base QOpenGLFunctions::initializeOpenGLFunctions(),
+		// which returns void - unlike QOpenGLFunctions_3_1 (replaced in 0.3), whose
+		// version-specific override returned bool. No version check to fail here anymore;
+		// QOpenGLExtraFunctions makes no version promise to fail against in the first place.
+		// Confirmed 2026-09-06 with a real Android build attempt ("invalid argument type
+		// 'void' to unary expression") - qopenglfunctions.h:270 in the Qt sources.
+		initializeOpenGLFunctions();
 
 		DEBUG("GL_RENDERER: " + QString((char*)glGetString(GL_RENDERER)));
 		DEBUG("GL_VENDOR: " + QString((char*)glGetString(GL_VENDOR)));
+
+		// Fase 6 (2026-09-15), CLAUDE.md §14.4 point 3 - "verificar GL_MAX_TEXTURE_SIZE real
+		// del dispositivo". Nothing queried this before; TexturePage.cpp's fixed PAGE_SIZE
+		// (4096) is safely under the OpenGL ES 3.0 spec's guaranteed minimum either way, so
+		// this isn't fixing a live bug - it's the missing real-device data point the task
+		// asked for, logged once at startup rather than assumed from GPU spec sheets.
+		GLint maxTextureSize = 0;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+		DEBUG("GL_MAX_TEXTURE_SIZE: " + NumStr(maxTextureSize));
 
 		glEnable(GL_BLEND);
 		glFrontFace(GL_CW);

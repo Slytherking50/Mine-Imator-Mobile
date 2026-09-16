@@ -43,7 +43,7 @@ function tab_frame_editor_particles()
 		text = text_get("listnone")
 	
 	tab_control_menu()
-	draw_button_menu("frameeditorparticlesattractor", e_menu.TIMELINE, dx, dy, dw, 24, tl_edit.value[e_value.ATTRACTOR], text, action_tl_frame_attractor)
+	draw_button_menu("frameeditorparticlesattractor", e_menu.TIMELINE, dx, dy, dw, ui_large_height, tl_edit.value[e_value.ATTRACTOR], text, action_tl_frame_attractor)
 	tab_next()
 	
 	// Force

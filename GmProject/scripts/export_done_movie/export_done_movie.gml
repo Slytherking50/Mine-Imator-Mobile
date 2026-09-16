@@ -10,6 +10,14 @@ function export_done_movie(cancel = false)
 	{
 		movie_done()
 		buffer_delete(exportmovie_buffer)
+
+		// Android: copy the finished local encode onto the real picked content:// URI
+		// (action_toolbar_exportmovie_save.gml redirected the encoder to temp_movie_file).
+		// Skipped on cancel - a cancelled/partial encode has nothing worth delivering.
+		if (!cancel && export_filename_content_uri != "")
+			file_copy_lib(temp_movie_file, export_filename_content_uri)
+
+		export_filename_content_uri = ""
 	}
 	
 	surface_free(export_surface)

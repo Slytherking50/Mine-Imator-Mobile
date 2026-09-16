@@ -607,9 +607,66 @@ function view_draw(view)
 		bench_click_ani += (bench_click_ani_goal - bench_click_ani) / max(1, 2 / delta)
 		bench_rotate_ani = max(0, bench_rotate_ani - 0.01 * delta)
 		
-		// Draw toolbar
-		view_toolbar_draw(view, boxx + 8, boxy + captionh + 8 + 86 + 12)
+		// Draw toolbar - Android gets its own horizontal, labeled, centered-on-top layout
+		// (view_toolbar_draw_touch.gml, 2026-09-15, user reference screenshot + explicit
+		// "colocala así, pero arriba") instead of desktop's small unlabeled vertical strip
+		// under the workbench; same underlying tool settings/click behavior either way.
+		if (platform_get() == e_platform.ANDROID)
+			view_toolbar_draw_touch(view, boxx + boxw / 2, boxy + captionh + 8)
+		else
+			view_toolbar_draw(view, boxx + 8, boxy + captionh + 8 + 86 + 12)
 	}
+
+	// Virtual joystick - WASD (camera_control_move.gml, keybinds CAM_FORWARD/BACK/LEFT/
+	// RIGHT) has no touch equivalent (§6.4) for the work camera's free-fly movement,
+	// unlike look-around (one-finger drag, already works) or orbit/pinch/pan (Fase 4,
+	// this session). Bottom-left corner: away from the workbench button (top-left) and
+	// the properties panel (right, setting_properties_location default), reachable by the
+	// thumb holding the phone in landscape while the other hand drags to look around.
+	// Faded to a third of its opacity at rest ("no estorbe en la pantalla") and only
+	// brightens while actually being used. Drawing only, here - the press-detection and
+	// movement math live in view_update.gml (runs earlier each frame, needed there so it
+	// wins the race against the viewport's general click handler; see the comment there
+	// for why it didn't reliably activate when both lived in this draw-phase function).
+	// Plain rectangles, not spr_control_dial (the rotation wheel's own sprite,
+	// reused as a shortcut in the first version) - simple, on explicit request, and
+	// self-contained: no dependency on a sprite's own shape/size assumptions.
+	// Not nested under "if (view = view_main)" above (2026-09-15 fix) - the split-view
+	// "Cámara activa" panel (view_second) is its own free work-camera view whenever no real
+	// scene camera drives it (!cam, same condition view_update.gml's orbit/pan/zoom already
+	// uses), so it needs its own joystick too ("ni hay joystick" - user report testing the
+	// split panel live). Position/radius now live on the view itself (view.joystick_screen_*,
+	// app_startup_interface_views.gml) rather than a bare global, so each view's hit-test in
+	// view_update.gml checks against its OWN box - a single shared global would only ever
+	// hold whichever view drew last, leaving the other view's joystick visible but dead.
+	// (!cam || editable): also covers a real, editable camera object (2026-09-15, "creé una
+	// cámara y no aparece el joystick") - inlined rather than reusing view_update()'s
+	// editcamobj local since that function isn't in scope here; same rule as its
+	// "place_tl = null && !cam.lock" (see view_update.gml's own copy of this check).
+	var joyeditable = (!cam || (place_tl = null && !cam.lock));
+	if (platform_get() == e_platform.ANDROID && joyeditable)
+	{
+		var joyradius, joyx, joyy, joymag, knobsize;
+		joyradius = 40
+		joyx = boxx + 20 + joyradius
+		joyy = boxy + boxh - 20 - joyradius
+		knobsize = 28
+
+		view.joystick_screen_x = joyx
+		view.joystick_screen_y = joyy
+		view.joystick_screen_radius = joyradius
+
+		joymag = point_distance(0, 0, joystick_knob_x, joystick_knob_y) / joyradius
+
+		// Base - thin square outline only, no fill, so it never blocks the view under it.
+		draw_outline(joyx - joyradius, joyy - joyradius, joyradius * 2, joyradius * 2, 2, c_accent, joystick_alpha, true)
+
+		// Knob - solid filled square, brightens slightly further with drag distance.
+		draw_box(joyx + joystick_knob_x - knobsize / 2, joyy + joystick_knob_y - knobsize / 2, knobsize, knobsize, false, c_accent, (0.75 + 0.25 * joymag) * joystick_alpha)
+		draw_outline(joyx + joystick_knob_x - knobsize / 2, joyy + joystick_knob_y - knobsize / 2, knobsize, knobsize, 1, c_button_text, joystick_alpha, true)
+	}
+	else if (platform_get() == e_platform.ANDROID)
+		view.joystick_screen_radius = 0
 	
 	// Moving / Resizing
 	if (view = view_second && window_get_current() != e_window.VIEW_SECOND) 

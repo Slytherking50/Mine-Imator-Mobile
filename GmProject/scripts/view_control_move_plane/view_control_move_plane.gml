@@ -87,7 +87,9 @@ function view_control_move_plane(view, control, axes, color, mat, normal, corner
 			view_control_edit = null
 		}
 	}
-	else if (view.control_mouseon_last = control)
+	// Android OR-fallback (Fase 4) - see view_control_move_axis.gml for the full comment.
+	// corner12D/22D/32D/42D already computed above (lines 29-52), before this block.
+	else if (view.control_mouseon_last = control || (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon && (point_in_triangle(mouse_x - content_x, mouse_y - content_y, corner12D[X], corner12D[Y], corner22D[X], corner22D[Y], corner32D[X], corner32D[Y]) || point_in_triangle(mouse_x - content_x, mouse_y - content_y, corner12D[X], corner12D[Y], corner42D[X], corner42D[Y], corner32D[X], corner32D[Y]))))
 	{
 		// Left click
 		if (mouse_left_pressed)

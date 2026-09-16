@@ -17,6 +17,15 @@ function minecraft_assets_event_create()
 	model_texture_list = ds_list_create()
 	block_texture_list = ds_list_create()
 	block_texture_ani_list = ds_list_create()
+	// Name->first-index maps mirroring block_texture_list/block_texture_ani_list, built once
+	// right after those lists are populated (minecraft_assets_load.gml). block_load_render_
+	// model.gml used to do ds_list_find_index() (linear string scan) up to 6x per rendered
+	// face - with a texture list in the hundreds/thousands of entries and thousands of faces
+	// across a real block set, that scan dominated load time (CLAUDE.md B21, measured
+	// 2026-09-09: 73% of block-loading time was inside block_load_render_model). These maps
+	// give the same "first match wins" lookup in O(1) instead of O(n).
+	block_texture_index_map = ds_map_create()
+	block_texture_ani_index_map = ds_map_create()
 	block_texture_color_map = ds_map_create()
 	item_texture_list = ds_list_create()
 	particle_texture_list = ds_list_create()

@@ -16,12 +16,12 @@ function draw_button_label(name, xx, yy, w = null, icon = null, type = e_button.
 	
 	cap = text_get(name)
 	
-	h = (type != e_button.TOOLBAR ? 32 : toolbar_size)
+	h = (type != e_button.TOOLBAR ? ui_large_height : toolbar_size)
 	font = (type != e_button.TOOLBAR ? font_button : font_value)
-	
+
 	if (type = e_button.BIG)
 	{
-		h = 64
+		h = ui_large_height * 2
 		font = font_heading_big
 	}
 	

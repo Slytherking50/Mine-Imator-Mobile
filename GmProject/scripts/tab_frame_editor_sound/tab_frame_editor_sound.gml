@@ -10,7 +10,7 @@ function tab_frame_editor_sound()
 		text = text_get("listnone")
 	
 	tab_control_menu()
-	draw_button_menu("frameeditorsoundfile", e_menu.LIST, dx, dy, dw, 24, tl_edit.value[e_value.SOUND_OBJ], text, action_tl_frame_sound_obj)
+	draw_button_menu("frameeditorsoundfile", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.value[e_value.SOUND_OBJ], text, action_tl_frame_sound_obj)
 	tab_next()
 	
 	tab_control_meter()

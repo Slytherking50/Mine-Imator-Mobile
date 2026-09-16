@@ -6,10 +6,30 @@
 function camera_control_rotate(cam, lockx, locky)
 {
 	var mx, my;
-	mx = -((display_mouse_get_x() - lockx) / 4)
-	my = ((display_mouse_get_y() - locky) / 4)
-	display_mouse_set(lockx, locky)
-	
+
+	// INSTRUMENTAL, no es el diseño de input táctil elegido - ver KNOWN_ISSUES.md.
+	// display_mouse_set() recentra el cursor del SO cada frame para permitir arrastre
+	// infinito en escritorio; en touch no hay cursor que recentrar, Android reporta la
+	// posición REAL del dedo cada frame sin importar qué "fuerce" este código, así que el
+	// recentro compite con el toque real y la cámara salta erráticamente (confirmado en
+	// dispositivo real, 2026-09-09). Este branch NO diseña el modelo de input táctil (eso
+	// es Fase 3/4, CLAUDE.md §12) - es el mínimo cambio para poder arrastrar sin que bugee
+	// y así poder hacer la verificación visual pendiente de Fase 2 (cielo, personaje de
+	// cerca, aliasing). Sigue sin pellizco-zoom y sigue sin resolver el contrato de
+	// mouse_x/mouse_y entre toques (B10, CLAUDE.md §6.3) - no tomar esto como el gesto de
+	// cámara final.
+	if (platform_get() == e_platform.ANDROID)
+	{
+		mx = -(mouse_dx / 4)
+		my = (mouse_dy / 4)
+	}
+	else
+	{
+		mx = -((display_mouse_get_x() - lockx) / 4)
+		my = ((display_mouse_get_y() - locky) / 4)
+		display_mouse_set(lockx, locky)
+	}
+
 	if (!cam)
 	{
 		cam_work_angle_xy += mx

@@ -41,7 +41,7 @@ function block_load_variant_model(map, type)
 	
 	// Create model for rendering
 	model[model_amount] = block_load_render_model(blockmodel, rot, uvlock, false, weight)
-	
+
 	if (type = "leaves") // For "Opaque leaves" setting
 		model[model_amount].opaque = block_load_render_model(blockmodel, rot, uvlock, true, weight)
 	

@@ -840,7 +840,7 @@ function tab_timeline()
 	searchx = (setting_advanced_mode ? listx + (24 + 16) : listx + 8) 
 	searchwid = (setting_advanced_mode ? listw - (24 + 24) : listw - 16) 
 	timeline.tbx_search.text = timeline_search
-	draw_textfield("timelinesearch", searchx, bary + 4, searchwid, 24, timeline.tbx_search, action_tl_search, text_get("listsearch"), "none")
+	draw_textfield("timelinesearch", searchx, bary + 4, searchwid, ui_touch_textfield_height, timeline.tbx_search, action_tl_search, text_get("listsearch"), "none")
 	
 	// Context menu
 	if (mouseinnames)
@@ -1665,9 +1665,19 @@ function tab_timeline()
 	}
 	
 	// Zoom
-	if (window_scroll_focus_prev = "timelinezoom" && window_busy = "" && mouse_wheel <> 0)
+	// Android pinch-zoom (Fase 4) - desktop's zoom is Ctrl+wheel, no physical Ctrl key on
+	// Android. touch_pinch_delta() is the same continuous per-frame delta the viewport
+	// camera's own pinch-zoom already uses (view_update.gml) - scaled down and fed through
+	// this zoom's own existing "m" multiplier instead of that formula (camera zoom there is
+	// a distance multiplier, this is a discrete-tick-style zoom level), so it scales
+	// continuously while pinching instead of per discrete tick like the wheel does.
+	var androidpinch = 0;
+	if (platform_get() == e_platform.ANDROID && content_mouseon && touch_count() >= 2)
+		androidpinch = touch_pinch_delta()
+
+	if ((window_scroll_focus_prev = "timelinezoom" && window_busy = "" && mouse_wheel <> 0) || (androidpinch <> 0 && window_busy = ""))
 	{
-		var m = (mouse_wheel = 1 ? .5 : 2);
+		var m = (androidpinch <> 0 ? (1 + androidpinch / 100) : (mouse_wheel = 1 ? .5 : 2));
 		timeline_zoom_goal = clamp(timeline_zoom_goal * m, 0.25, 32)
 		if (timeline_zoom_goal > 1)
 			timeline_zoom_goal = round(timeline_zoom_goal)
@@ -1699,7 +1709,25 @@ function tab_timeline()
 	}
 	
 	content_mouseon = app_mouse_box(content_x, content_y, content_width, content_height, "place") && !popup_mouseon && !toast_mouseon && !context_menu_mouseon
-	
+
+	// Android two-finger pan (Fase 4) - desktop's pan is a middle-mouse-button drag
+	// (window_busy="timelinedrag" above), no middle button on Android. touch_pan_dx()/dy()
+	// (Fase 4, defined in util_cpp.gml alongside touch_pinch_delta() but unused until now -
+	// the viewport camera's own 2-finger pan rides on the synthesized mouse's mouse_dx/dy
+	// instead, since it already had a state to enter via a first single-finger click; the
+	// timeline has no such entry click, so it reads these dedicated per-frame deltas
+	// directly). swipe-to-scroll (scrollbar_draw.gml, Fase 3) already covers the scrollbar
+	// strip itself - this covers 2-finger drag from anywhere in the content area, matching
+	// how the viewport's own camera pan isn't restricted to an edge strip either. Gated on
+	// window_busy = "" so it doesn't fight a keyframe drag or selection already in progress.
+	if (platform_get() == e_platform.ANDROID && window_busy = "" && content_mouseon && touch_count() >= 2)
+	{
+		timeline.hor_scroll.value = max(0, timeline.hor_scroll.value - touch_pan_dx())
+		timeline.ver_scroll.value = max(0, timeline.ver_scroll.value - touch_pan_dy())
+		timeline.ver_scroll.value_goal = timeline.ver_scroll.value
+		timeline.hor_scroll.value_goal = timeline.hor_scroll.value
+	}
+
 	// Move view when selecting
 	if (window_busy = "timelinemove" || window_busy = "timelineselect" || (window_busy = "place" && mouseinnames))
 	{

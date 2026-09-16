@@ -1,11 +1,13 @@
 #include "Generated/Scripts.hpp"
 
 #include "AppHandler.hpp"
+#include "AppWindow.hpp"
 #include "Asset/DataStructure.hpp"
 
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopWidget>
+#include <QInputMethod>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTime>
@@ -362,6 +364,27 @@ namespace CppProject
 
 	RealType interface_scale_default_get()
 	{
+	#if defined(Q_OS_ANDROID)
+		// The desktop formula below (`(IntType)(ratio + 0.01)`) truncates to a whole number -
+		// fine for desktop OS scaling steps (100/125/150/200%), which is what it was written
+		// for, but on this device it silently reduces to exactly 1: Qt's Android backend
+		// reports a fixed baseline logicalDpiX() (Android's own "mdpi" reference density, not
+		// the phone's real physical DPI - devicePixelRatio() is the separate, already-used
+		// value for that, see GLWidget.cpp), and 160/96=1.67 floors to 1 regardless of the
+		// actual screen. Confirmed on a real device: even with the scale correctly being
+		// APPLIED every launch (not the separate first-launch gap, see KNOWN_ISSUES.md B27),
+		// project browser and editor both still looked small - the applied value itself was
+		// just too conservative for a phone screen held closer to the eye than a monitor.
+		// Fixed baseline instead of fixing the truncation for every platform, so desktop's
+		// existing (integer-only) auto-scale behavior stays byte-for-byte unchanged - this is
+		// only the DEFAULT for setting_interface_scale_auto; the user can still override it
+		// manually in Settings > Interface if this isn't quite right for a given device.
+		// Bumped from the first pass's 1.5 to 1.65 after beta testing on a real device found
+		// the project browser and editor still a bit small - safe to push further now that
+		// bench_draw.gml's workbench popup self-corrects against this value instead of
+		// assuming a fixed 1.5 (2026-09-11, same round of feedback).
+		return 1.65;
+	#else
 		RealType ratio;
 	#if OS_MAC
 		ratio = qApp->desktop()->logicalDpiX() / 72.0;
@@ -369,6 +392,7 @@ namespace CppProject
 		ratio = qApp->desktop()->logicalDpiX() / 96.0;
 	#endif
 		return (IntType)(ratio + 0.01);
+	#endif
 	}
 
 	void interface_scale_set(RealType factor)
@@ -380,12 +404,54 @@ namespace CppProject
 		App->scale = factor;
 	}
 
+	// KNOWN_ISSUES.md B20: showInputPanel() only needs a valid Qt focusObject() (confirmed by
+	// reading qandroidinputcontext.cpp directly, not assumed) - KeyChecker already IS that
+	// object at all times (AppWindow.cpp), so re-asserting its focus immediately before
+	// showing is enough to guarantee Android has something to show, defending against the
+	// same focus-timing issue Maximize() already works around after showFullScreen(). #ifdef
+	// (not just gating the GML call site to Android) so a desktop touchscreen laptop can never
+	// trigger the Windows on-screen keyboard as an unintended side effect - genuinely a no-op
+	// there, not just one in practice.
+	void keyboard_virtual_show()
+	{
+	#ifdef Q_OS_ANDROID
+		if (AppWin && AppWin->keyChecker)
+		{
+			AppWin->keyChecker->clearFocus();
+			AppWin->keyChecker->setFocus();
+		}
+		QGuiApplication::inputMethod()->show();
+	#endif
+	}
+
+	void keyboard_virtual_hide()
+	{
+	#ifdef Q_OS_ANDROID
+		QGuiApplication::inputMethod()->hide();
+	#endif
+	}
+
+	void keyboard_field_set(RealType x, RealType y, RealType w, RealType h)
+	{
+	#ifdef Q_OS_ANDROID
+		if (AppWin && AppWin->keyChecker)
+		{
+			AppWin->keyChecker->fieldX = x;
+			AppWin->keyChecker->fieldY = y;
+			AppWin->keyChecker->fieldW = w;
+			AppWin->keyChecker->fieldH = h;
+		}
+	#endif
+	}
+
 	IntType platform_get()
 	{
 	#if OS_WINDOWS
 		return e_platform_WINDOWS;
 	#elif OS_MAC
 		return e_platform_MAC_OS;
+	#elif defined(Q_OS_ANDROID)
+		return e_platform_ANDROID;
 	#else
 		return e_platform_LINUX;
 	#endif

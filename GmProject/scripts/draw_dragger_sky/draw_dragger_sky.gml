@@ -57,20 +57,29 @@ function draw_dragger_sky(name, xx, yy, value, def, script, tbx, time)
 				window_busy = ""
 			}
 		}
-		else if (mouse_dx != 0)
+		// mouse_move > 5, same threshold/reasoning as draw_dragger.gml (Fase 3)
+		else if (mouse_move > 5)
 		{
 			dragger_drag_value = value
 			window_busy = name + "drag" // Start dragging
 			window_focus = ""
 		}
 	}
-	
+
 	// Is dragging
 	if (window_busy = name + "drag")
 	{
 		mouse_cursor = cr_none
-		dragger_drag_value += (mouse_x - mouse_click_x) * dragger_multiplier
-		window_mouse_set(mouse_click_x, mouse_click_y)
+
+		// INSTRUMENTAL, mismo fix que draw_dragger.gml (B10, KNOWN_ISSUES.md) - ver el
+		// comentario ahí
+		if (platform_get() == e_platform.ANDROID)
+			dragger_drag_value += mouse_dx * dragger_multiplier
+		else
+		{
+			dragger_drag_value += (mouse_x - mouse_click_x) * dragger_multiplier
+			window_mouse_set(mouse_click_x, mouse_click_y)
+		}
 		
 		var d = snap(dragger_drag_value, snapval) - value;
 		

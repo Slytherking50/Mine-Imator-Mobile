@@ -54,7 +54,17 @@ function view_control_move_axis(view, control, vid, color, start3D, end3D, fade 
 		view_control_vec = point2D_sub(end2D, center2D)
 		draw_set_color(c_white)
 	}
-	else if (view.control_mouseon_last = control)
+	// Android OR-fallback (Fase 4): control_mouseon_last is only correct here because it
+	// was written by THIS SAME function's own "Check mouse" block (below, line ~110) one
+	// frame in the past - a continuously-updating mouse cursor makes that 1-frame lag
+	// invisible, but a touch tap delivers press+position together, so the position may
+	// never have been "hovered" on a prior frame at all. Duplicating the exact same
+	// point_line_distance check here, using start2D/end2D already computed above (lines
+	// 21-29, before this block), lets Android grab on the SAME frame as the tap - no
+	// dependency on Qt's touch-to-mouse event ordering either way (unverified on device,
+	// see research/2026-09-15-fase4-timeline-gizmos-inventory.md). Desktop's own path
+	// (control_mouseon_last) is untouched.
+	else if (view.control_mouseon_last = control || (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon && point_line_distance(start2D[X], start2D[Y], end2D[X], end2D[Y], mouse_x - content_x, mouse_y - content_y) < view_3d_control_width / 2))
 	{
 		// Left click
 		if (mouse_left_pressed)

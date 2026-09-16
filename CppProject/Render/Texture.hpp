@@ -14,6 +14,14 @@ namespace CppProject
 		// Returns the unique ID of the texture and generate mipmaps if enabled.
 		IntType GetId();
 
+		// Patches a sub-region of an already-uploaded texture in place (no delete/recreate of
+		// the underlying GPU resource). Used by TexturePage::Add() so that packing a new sprite
+		// into a shared page never has to destroy and fully re-upload the whole page texture.
+		// Returns false (does nothing) if img/pos don't fit inside the texture's current bounds.
+		bool UpdateSubImage(const QImage& img, QPoint pos);
+
+		int width = 0, height = 0;
+
 	#if API_D3D11
 		ID3D11Texture2D* d3dTex = nullptr;
 		ID3D11ShaderResourceView* d3dSRV = nullptr;

@@ -22,7 +22,7 @@ function tab_frame_editor_ik()
 			text = text_get("listnone")
 		
 		tab_control_menu()
-		draw_button_menu("frameeditoriktarget", e_menu.TIMELINE, dx, dy, dw, 24, tl_edit.value[e_value.IK_TARGET], text, action_tl_frame_ik_target)
+		draw_button_menu("frameeditoriktarget", e_menu.TIMELINE, dx, dy, dw, ui_large_height, tl_edit.value[e_value.IK_TARGET], text, action_tl_frame_ik_target)
 		tab_next()
 		
 		// Pole target object
@@ -32,7 +32,7 @@ function tab_frame_editor_ik()
 			text = text_get("listnone")
 		
 		tab_control_menu()
-		draw_button_menu("frameeditorikangletarget", e_menu.TIMELINE, dx, dy, dw, 24, tl_edit.value[e_value.IK_TARGET_ANGLE], text, action_tl_frame_ik_target_angle, tl_edit.value[e_value.IK_TARGET] = null)
+		draw_button_menu("frameeditorikangletarget", e_menu.TIMELINE, dx, dy, dw, ui_large_height, tl_edit.value[e_value.IK_TARGET_ANGLE], text, action_tl_frame_ik_target_angle, tl_edit.value[e_value.IK_TARGET] = null)
 		tab_next()
 		
 		// Angle offset

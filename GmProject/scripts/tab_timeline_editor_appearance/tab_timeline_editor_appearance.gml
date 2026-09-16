@@ -54,7 +54,7 @@ function tab_timeline_editor_appearance()
 		
 		// Blend mode
 		tab_control_menu()
-		draw_button_menu("timelineeditorblendmode", e_menu.LIST, dx, dy, dw, 24, tl_edit.blend_mode, text_get("timelineeditorblendmode" + tl_edit.blend_mode), action_tl_blend_mode)
+		draw_button_menu("timelineeditorblendmode", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.blend_mode, text_get("timelineeditorblendmode" + tl_edit.blend_mode), action_tl_blend_mode)
 		tab_next()
 		
 		// Alpha mode
@@ -67,7 +67,7 @@ function tab_timeline_editor_appearance()
 			text = text_get("renderalphamodedefault")
 			
 		tab_control_menu()
-		draw_button_menu("timelineeditoralphamode", e_menu.LIST, dx, dy, dw, 24, tl_edit.alpha_mode, text, action_tl_alpha_mode)
+		draw_button_menu("timelineeditoralphamode", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.alpha_mode, text, action_tl_alpha_mode)
 		tab_next()
 		
 		// Depth

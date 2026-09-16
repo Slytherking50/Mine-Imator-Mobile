@@ -24,7 +24,9 @@ function view_control_scale_all(view, mat, radius)
 		coord = view_control_scale_coords
 		view_control_scale_amount = point_distance((mouse_wrap_x * content_width) + mouse_x - content_x, (mouse_wrap_y * content_height) + mouse_y - content_y, view_control_scale_coords[X], view_control_scale_coords[Y]) / view_control_scale_start
 	}
-	else if (view.control_mouseon_last = e_view_control.SCA_XYZ)
+	// Android OR-fallback (Fase 4) - see view_control_move_axis.gml for the full comment.
+	// coord/radius2D already computed above (lines 9-16), before this block.
+	else if (view.control_mouseon_last = e_view_control.SCA_XYZ || (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon && (abs(point_distance(mouse_x - content_x, mouse_y - content_y, coord[X], coord[Y]) - radius2D) < view_3d_control_width/2)))
 	{
 		// Left click
 		if (mouse_left_pressed)

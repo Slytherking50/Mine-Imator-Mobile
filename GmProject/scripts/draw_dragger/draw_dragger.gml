@@ -71,7 +71,13 @@ function draw_dragger(name, xx, yy, wid, value, mul, minval, maxval, def, snapva
 				window_busy = ""
 			}
 		}
-		else if (mouse_dx != 0)
+		// mouse_move > 5 (total displacement since press, not mouse_dx's raw per-frame delta)
+		// - Fase 3, CLAUDE.md §6.2/inventario 0.8: on touch, a stationary finger still jitters
+		// a few px/frame from digitizer noise, so "any dx" fired a drag on almost every tap,
+		// never letting the numeric textbox open. Same 5px threshold view_update.gml already
+		// uses (camera orbit vs. click) - not new to this codebase, and harmless on desktop
+		// (a few px of mouse wobble before a click is imperceptible).
+		else if (mouse_move > 5)
 		{
 			dragger_drag_value = value
 			window_busy = name + "drag" // Start dragging
@@ -83,8 +89,23 @@ function draw_dragger(name, xx, yy, wid, value, mul, minval, maxval, def, snapva
 	if (window_busy = name + "drag")
 	{
 		mouse_cursor = cr_none
-		dragger_drag_value += (mouse_x - mouse_click_x) * mul * dragger_multiplier
-		window_mouse_set(mouse_click_x, mouse_click_y)
+
+		// INSTRUMENTAL, mismo motivo y mismo fix que camera_control_rotate.gml/
+		// camera_control_move.gml (B10, KNOWN_ISSUES.md): window_mouse_set() ->
+		// display_mouse_set() intenta recentrar el cursor cada frame para poder arrastrar
+		// sin límite en escritorio, pero en touch Android reporta la posición REAL del dedo
+		// sin importar qué fuerce el código - el recentro nunca "funciona", así que
+		// (mouse_x - mouse_click_x) sigue siendo el desplazamiento total real (no el delta de
+		// este frame) y se sigue sumando cada frame sin límite, disparando el valor a un
+		// extremo casi al instante. En Android se usa mouse_dx (delta real entre frames, ya
+		// calculado en app_update_mouse.gml) sin recentrar nada.
+		if (platform_get() == e_platform.ANDROID)
+			dragger_drag_value += mouse_dx * mul * dragger_multiplier
+		else
+		{
+			dragger_drag_value += (mouse_x - mouse_click_x) * mul * dragger_multiplier
+			window_mouse_set(mouse_click_x, mouse_click_y)
+		}
 		
 		var d;
 		

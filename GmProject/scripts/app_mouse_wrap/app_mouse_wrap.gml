@@ -9,6 +9,15 @@ function app_mouse_wrap(xx, yy, w, h)
 {
 	if (!window_mouse_get_permission())
 		return 0;
+
+	// INSTRUMENTAL: no-op en Android (B10, KNOWN_ISSUES.md). Esta función usa
+	// window_mouse_set() -> display_mouse_set() para "envolver" el cursor de un borde del
+	// viewport al opuesto y así permitir arrastre de mouse sin límite en escritorio - en
+	// touch no hay nada que envolver (el dedo ya está limitado por el borde físico de la
+	// pantalla), y el intento de recentrar compite con la posición real reportada por
+	// Android, igual que en draw_dragger.gml/camera_control_rotate.gml.
+	if (platform_get() == e_platform.ANDROID)
+		return 0;
 	
 	var setx, sety, size;
 	setx = mouse_x

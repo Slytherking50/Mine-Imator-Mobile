@@ -41,6 +41,6 @@ function minecraft_assets_startup()
 		error("errorloadassets")
 		return false
 	}
-	
+
 	return true
 }

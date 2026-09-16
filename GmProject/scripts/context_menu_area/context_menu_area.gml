@@ -19,7 +19,12 @@ function context_menu_area()
 	hei = argument[3]
 	name = argument[4]
 	
-	if (app_mouse_box(xx, yy, wid, hei) && mouse_right_pressed)
+	// mouse_long_press_pressed (app_update_mouse.gml, Fase 3) is the touch equivalent of
+	// right-click - single shared entry point, covers dragger/meter/wheel/textfield_group/
+	// color/the focused textbox at once. app_mouse_clear() below already clears mouse_left
+	// for this frame, which is what stops the calling primitive's own click/drag from also
+	// firing for the same touch that just opened this menu.
+	if (app_mouse_box(xx, yy, wid, hei) && (mouse_right_pressed || mouse_long_press_pressed))
 	{
 		if (argument_count > 5)
 		{

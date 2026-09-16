@@ -35,7 +35,7 @@ function tab_properties_library()
 	// Name
 	tab_control_textfield(false)
 	tab.library.tbx_name.text = temp_edit.name
-	draw_textfield("libraryname", dx, dy, dw, 24, tab.library.tbx_name, action_lib_name, temp_edit.display_name, "left")
+	draw_textfield("libraryname", dx, dy, dw, ui_touch_textfield_height, tab.library.tbx_name, action_lib_name, temp_edit.display_name, "left")
 	tab_next()
 	
 	switch (temp_edit.type)
@@ -407,7 +407,7 @@ function tab_properties_library()
 			if (setting_advanced_mode)
 			{
 				tab_control_menu()
-				draw_button_menu("librarytextfont", e_menu.LIST, dx, dy, dw, 24, temp_edit.text_font, temp_edit.text_font.display_name, action_lib_text_font)
+				draw_button_menu("librarytextfont", e_menu.LIST, dx, dy, dw, ui_large_height, temp_edit.text_font, temp_edit.text_font.display_name, action_lib_text_font)
 				tab_next()
 			}
 			
@@ -573,7 +573,7 @@ function tab_properties_library()
 			
 			// Model
 			tab_control_menu()
-			draw_button_menu("librarymodel", e_menu.LIST, dx, dy, dw, 24, temp_edit.model, text, action_lib_model, false, null)
+			draw_button_menu("librarymodel", e_menu.LIST, dx, dy, dw, ui_large_height, temp_edit.model, text, action_lib_model, false, null)
 			tab_next()
 			
 			// Texture

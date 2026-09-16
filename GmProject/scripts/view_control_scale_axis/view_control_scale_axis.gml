@@ -61,7 +61,9 @@ function view_control_scale_axis(view, control, vid, color, start, length, mat, 
 		view_control_vec = point2D_sub(end2D, center2D)
 		draw_set_color(c_white)
 	}
-	else if (view.control_mouseon_last = control)
+	// Android OR-fallback (Fase 4) - see view_control_move_axis.gml for the full comment.
+	// start2D/end2D already computed above (lines 32-36), before this block.
+	else if (view.control_mouseon_last = control || (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon && point_line_distance(start2D[X], start2D[Y], end2D[X], end2D[Y], mouse_x - content_x, mouse_y - content_y) < view_3d_control_width))
 	{
 		// Left click
 		if (mouse_left_pressed)

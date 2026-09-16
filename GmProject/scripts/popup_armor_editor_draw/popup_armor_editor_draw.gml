@@ -31,9 +31,9 @@ function popup_armor_editor_draw_piece_type(piece, pieceid, capwid)
 		}
 		
 		if (popup.armor_edit = bench_settings)
-			draw_button_menu(state, e_menu.LIST, dx, dy, w, 24, type, minecraft_asset_get_name("modelstatevalue", type), action_bench_model_state, false, null, null, "", c_white, 1, capwid)
+			draw_button_menu(state, e_menu.LIST, dx, dy, w, ui_large_height, type, minecraft_asset_get_name("modelstatevalue", type), action_bench_model_state, false, null, null, "", c_white, 1, capwid)
 		else
-			draw_button_menu(state, e_menu.LIST, dx, dy, w, 24, type, minecraft_asset_get_name("modelstatevalue", type), (popup.armor_edit.type = e_temp_type.BODYPART) ? action_lib_bodypart_model_state : action_lib_model_state, false, null, null, "", c_white, 1, capwid)
+			draw_button_menu(state, e_menu.LIST, dx, dy, w, ui_large_height, type, minecraft_asset_get_name("modelstatevalue", type), (popup.armor_edit.type = e_temp_type.BODYPART) ? action_lib_bodypart_model_state : action_lib_model_state, false, null, null, "", c_white, 1, capwid)
 	}
 	menu_model_current = null
 	
@@ -62,13 +62,13 @@ function popup_armor_editor_draw_piece(piece, pieceid, capwid)
 	popup_armor_editor.piece_data_id = 2
 	
 	tab_control(24)
-	draw_button_menu("armoreditorpattern" + piece, e_menu.LIST, dx, dy, dw, 24, popup.armor_edit.armor_array[pieceid + 2], text_get("armoreditorpattern" + popup.armor_edit.armor_array[pieceid + 2]), action_armor_editor, piecetype = "none", null, null, "", c_white, 1, capwid)
+	draw_button_menu("armoreditorpattern" + piece, e_menu.LIST, dx, dy, dw, ui_large_height, popup.armor_edit.armor_array[pieceid + 2], text_get("armoreditorpattern" + popup.armor_edit.armor_array[pieceid + 2]), action_armor_editor, piecetype = "none", null, null, "", c_white, 1, capwid)
 	tab_next()
 	
 	popup_armor_editor.piece_data_id = 3
 	
 	tab_control(24)
-	draw_button_menu("armoreditormaterial" + piece, e_menu.LIST, dx, dy, dw, 24, popup.armor_edit.armor_array[pieceid + 3], text_get("armoreditormaterial" + popup.armor_edit.armor_array[pieceid + 3]), action_armor_editor, (piecetype = "none" || popup.armor_edit.armor_array[pieceid + 2] = "none"), null, null, "", c_white, 1, capwid)
+	draw_button_menu("armoreditormaterial" + piece, e_menu.LIST, dx, dy, dw, ui_large_height, popup.armor_edit.armor_array[pieceid + 3], text_get("armoreditormaterial" + popup.armor_edit.armor_array[pieceid + 3]), action_armor_editor, (piecetype = "none" || popup.armor_edit.armor_array[pieceid + 2] = "none"), null, null, "", c_white, 1, capwid)
 	tab_next()
 }
 

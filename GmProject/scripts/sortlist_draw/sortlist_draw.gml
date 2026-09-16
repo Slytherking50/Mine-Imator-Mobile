@@ -58,7 +58,7 @@ function sortlist_draw(slist, xx, yy, w, h, select, filter = true, name = "")
 		searchw -= (w - 144)
 	}
 	
-	if (draw_textfield("listsearch" + string(slist), searchx, yy, searchw, 24, slist.search_tbx, null, text_get("listsearch"), "none"))
+	if (draw_textfield("listsearch" + string(slist), searchx, yy, searchw, ui_touch_textfield_height, slist.search_tbx, null, text_get("listsearch"), "none"))
 	{
 		slist.scroll.value = 0
 		slist.scroll.value_goal = 0
@@ -113,7 +113,7 @@ function sortlist_draw(slist, xx, yy, w, h, select, filter = true, name = "")
 			slist.column_w[c] = ceil(slist.column_x[c + 1] * w) - dx
 		
 		// Resize?
-		if (c > 0 && app_mouse_box(xx + dx - 5, yy, 10, colsh) && content_mouseon)
+		if (c > 0 && app_mouse_box(xx + dx - (ui_touch_sortlist_resize_width / 2), yy, ui_touch_sortlist_resize_width, colsh) && content_mouseon)
 		{
 			mouse_cursor = cr_size_we
 			if (mouse_left_pressed)

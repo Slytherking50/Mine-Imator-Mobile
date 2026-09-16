@@ -10,9 +10,31 @@ function minecraft_assets_load()
 			// Unzip archive
 			case "unzip":
 			{
+				// Fase 6 (2026-09-15, PERF_LOG.md) - the shader-compile timer (Shader.cpp)
+				// already ruled out B17 as the ~6s pre-texture-load gap's cause (real compile
+				// time ~1.7s of it); this brackets the NEXT candidate - the 5-frame wait right
+				// here, which showed a ~3s gap in real device logs between the last shader and
+				// "Archive already unzipped". If these frames are slow (cold GPU/driver
+				// warmup, first frames after context creation), that alone could be the ~3s,
+				// with zero real unzip/IO work involved - only measurable per-frame, not as a
+				// single before/after span, since current_step's OWN increment cadence is part
+				// of what's being questioned.
 				if (current_step < 5)
+				{
+					if (!android_step_wait_logged)
+					{
+						android_step_wait_logged = true
+						debug_timer_start()
+					}
+					log("current_step wait", current_step, "at", current_time)
 					break
-				
+				}
+				else if (!android_step_wait_done)
+				{
+					android_step_wait_done = true
+					debug_timer_stop("current_step wait done (0 -> 5)")
+				}
+
 				// Check already unzipped
 				var exists = directory_exists_lib(load_assets_dir + mc_assets_directory);
 				if (array_length(file_find(load_assets_dir + mc_character_directory, ".mimodel")) = 0 ||
@@ -87,7 +109,17 @@ function minecraft_assets_load()
 				}
 				
 				ds_list_copy(block_texture_list, blocktextureslist)
-				
+
+				// Name->first-index map for block_texture_list (see minecraft_assets_event_
+				// create.gml) - built once here since the list is static after this point.
+				ds_map_clear(block_texture_index_map)
+				for (var t = 0; t < ds_list_size(block_texture_list); t++)
+				{
+					var tname = block_texture_list[|t];
+					if (is_undefined(block_texture_index_map[?tname]))
+						block_texture_index_map[?tname] = t
+				}
+
 				// Animated block textures
 				var blocktexturesanimatedlist = load_assets_map[?"block_textures_animated"];
 				if (is_undefined(blocktexturesanimatedlist))
@@ -95,8 +127,17 @@ function minecraft_assets_load()
 					log("No animated block textures found")
 					return false
 				}
-				
+
 				ds_list_copy(block_texture_ani_list, blocktexturesanimatedlist)
+
+				// Same as block_texture_index_map above, for block_texture_ani_list
+				ds_map_clear(block_texture_ani_index_map)
+				for (var t = 0; t < ds_list_size(block_texture_ani_list); t++)
+				{
+					var tname = block_texture_ani_list[|t];
+					if (is_undefined(block_texture_ani_index_map[?tname]))
+						block_texture_ani_index_map[?tname] = t
+				}
 				
 				// Block texture colors
 				var blocktexturescolorlist = load_assets_map[?"block_textures_color"];
@@ -153,18 +194,18 @@ function minecraft_assets_load()
 				{
 					res_load_pack_model_textures()
 					res_load_pack_block_textures()
-					
+
 					res_load_pack_item_textures("diffuse", "")
 					item_sheet_texture_material = sprite_duplicate(spr_default_material)
 					item_sheet_tex_normal = sprite_duplicate(spr_default_normal)
-					
+
 					minecraft_assets_load_particles(load_assets_map[?"particles"])
 					res_load_pack_particle_textures()
-					
+
 					res_load_pack_misc()
 					res_update_colors(biome_list[|2].name)
 				}
-				
+
 				load_assets_stage = "misc"
 				load_assets_progress = 0.45
 				break
@@ -353,6 +394,17 @@ function minecraft_assets_load()
 					return false
 				}
 				
+				// Fase 6 override explícito del usuario (2026-09-09, B21): se probó subir esto
+				// a 100 (5x) en el dispositivo real para ver si el throttle por-frame era el
+				// costo real - medido antes/después: 98s vs 97s, sin diferencia. Revertido a
+				// 20: cambiar cuántos bloques se procesan por frame no cambia el trabajo
+				// total, solo cómo se reparte entre frames. El costo real (perfilado en
+				// dispositivo real, no supuesto) era una búsqueda lineal por string
+				// (ds_list_find_index) repetida hasta 6 veces por cara renderizada en
+				// block_load_render_model.gml, contra listas de cientos/miles de texturas -
+				// 73% del tiempo de esta etapa. Arreglado con mapas de índice O(1)
+				// (minecraft_assets_event_create.gml/block_texture_index_map) - carga total
+				// bajó de ~98s a ~39s en el dispositivo de referencia. Ver KNOWN_ISSUES.md B21.
 				repeat (20)
 				{
 					if (load_assets_block_index = ds_list_size(blockslist))
@@ -445,7 +497,7 @@ function minecraft_assets_load()
 					}
 					
 					debug_timer_stop("Load blocks")
-					
+
 					// Clean up loaded model file objects
 					key = ds_map_find_first(load_assets_model_file_map)
 					while (!is_undefined(key))

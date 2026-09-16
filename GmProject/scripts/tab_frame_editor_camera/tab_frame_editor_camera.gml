@@ -26,7 +26,7 @@ function tab_frame_editor_camera()
 		}
 		
 		tab_control_menu()
-		draw_button_menu("frameeditorcameravideosize", e_menu.LIST, dx, dy, dw, 24, tl_edit.value[e_value.CAM_SIZE_USE_PROJECT] ? null : tab.camera.video_template, text, action_tl_frame_cam_video_template)
+		draw_button_menu("frameeditorcameravideosize", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.value[e_value.CAM_SIZE_USE_PROJECT] ? null : tab.camera.video_template, text, action_tl_frame_cam_video_template)
 		tab_next()
 		
 		// Custom
@@ -96,7 +96,7 @@ function tab_frame_editor_camera()
 			text = text_get("frameeditorcameratonemappernone")
 		
 		tab_control_menu()
-		draw_button_menu("frameeditorcameratonemapper", e_menu.LIST, dx, dy, dw, 24, tl_edit.value[e_value.CAM_TONEMAPPER], text, action_tl_frame_cam_tonemapper)
+		draw_button_menu("frameeditorcameratonemapper", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.value[e_value.CAM_TONEMAPPER], text, action_tl_frame_cam_tonemapper)
 		tab_next()
 		
 		// Exposure

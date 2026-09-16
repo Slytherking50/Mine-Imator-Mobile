@@ -17,6 +17,10 @@ function textbox_startup()
 	textbox_select_clickpos = 0
 	textbox_isediting = false
 	textbox_isediting_respond = false
+	// textbox_isediting_prev: edge-detector for app_update_keyboard.gml to know exactly the
+	// frame textbox_isediting flips, so it can call keyboard_virtual_show()/_hide() (Android
+	// virtual keyboard, KNOWN_ISSUES.md B20) only once per transition, not every frame.
+	textbox_isediting_prev = false
 	textbox_input = ""
 	textbox_jump = false
 	textbox_jumpto = -1

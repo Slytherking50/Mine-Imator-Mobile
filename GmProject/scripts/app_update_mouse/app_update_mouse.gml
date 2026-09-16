@@ -80,6 +80,33 @@ function app_update_mouse()
 	
 	if (mouse_left_pressed && mouse_click_count = 0)
 		mouse_click_count++
-	
+
+	#endregion
+
+	#region Long press
+
+	// Touch equivalent of right-click (CLAUDE.md §6.4/§17, Fase 3) - context_menu_area.gml
+	// is the single shared entry point for right-click across 5 primitives + the focused
+	// textbox, so this one addition covers all of them at once. mouse_move (computed above)
+	// is the same "distance since press" signal view_update.gml already uses to tell a
+	// click from a drag - reused here so a long-press cancels (resets, not permanently) if
+	// the touch turns into an actual drag (dragger scrub, wheel rotate, etc.) instead of a
+	// hold. Edge-triggered like mouse_right_pressed: true for exactly one frame per press.
+	if (mouse_left_pressed)
+	{
+		mouse_long_press_timer = 0
+		mouse_long_press_fired = false
+	}
+	else if (mouse_left && !mouse_long_press_fired)
+	{
+		if (mouse_move <= 5)
+			mouse_long_press_timer += (1/fps) * 1000
+		else
+			mouse_long_press_timer = 0
+	}
+
+	mouse_long_press_pressed = (mouse_left && !mouse_long_press_fired && mouse_long_press_timer >= 500)
+	mouse_long_press_fired = (mouse_long_press_fired || mouse_long_press_pressed)
+
 	#endregion
 }

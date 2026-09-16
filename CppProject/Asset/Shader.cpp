@@ -13,8 +13,16 @@
 #include <QProcess>
 
 #if API_OPENGL
+#ifndef Q_OS_ANDROID
+// qopenglext.h is Qt's full desktop+ES Khronos extension registry - it declares desktop-only
+// typedefs (e.g. GLclampd, used by GL_EXT_depth_bounds_test's PFNGLDEPTHBOUNDSEXTPROC) that
+// don't exist in the ES-only system GL headers, so it doesn't compile for Android at all.
+// Confirmed 2026-09-06 with a real Android build attempt. Whatever constant/typedef this file
+// actually needs beyond QOpenGLExtraFunctions has to be sourced differently on Android - not
+// yet identified, not yet needed (all GL 4.3/SSBO-binding code below is Q_OS_ANDROID-guarded).
 #undef __glext_h_
 #include <qopenglext.h>
+#endif
 
 #define ENABLE_OPENGL_43 1
 #endif
@@ -59,10 +67,24 @@ namespace CppProject
 	};
 
 #if API_OPENGL
+	// Static default, not just a placeholder: PrimitiveRenderer's "primitive" shader (the 6
+	// C++-only shaders outside shader_startup.gml's list) loads via AppHandler.cpp's
+	// `new PrimitiveRenderer` BEFORE `Shader::Init()` runs (confirmed 2026-09-08 on a real
+	// device) - so whatever this default is IS what "primitive" actually compiles with, on
+	// every platform, regardless of what Init() later detects/sets. "150 core" happens to
+	// already be a valid desktop GLSL version string, which is why this was never a problem
+	// there; "300 es" is the matching ES default (see Init() below) so Android's very first
+	// shader compile doesn't fail before Init() ever gets a chance to run.
+#ifdef Q_OS_ANDROID
+	QString Shader::glslVersion = "300 es";
+#else
 	QString Shader::glslVersion = "150 core"; // 3.2
+#endif
 	BoolType Shader::gl40Supported = false;
 	BoolType Shader::gl43Supported = false;
+#ifndef Q_OS_ANDROID
 	QOpenGLFunctions_4_3_Core* Shader::gl43Core = nullptr;
+#endif
 #endif
 
 	Shader::Shader(QString name, IntType subAssetId) : Asset(ID_Shader, subAssetId, name)
@@ -84,6 +106,16 @@ namespace CppProject
 	void Shader::Init()
 	{
 	#if API_OPENGL
+	#ifdef Q_OS_ANDROID
+		// Nothing to detect here: gl43/SSBO batching is already Option A, not ported to
+		// Android ([GATE G1], CLAUDE.md §5.1.1), and gl40's only use (textureQueryLod, an
+		// optional texture-sampling LOD optimization) isn't required for the app to render -
+		// the desktop-only version strings the detection below compiles ("#version 430"/
+		// "#version 400") could never succeed against an ES context anyway. glslVersion is
+		// already correct for Android from its static default above - deliberately not set
+		// here too, since PrimitiveRenderer's "primitive" shader loads before Init() ever
+		// runs (see the static default's comment) and needs the correct value from the start.
+	#else
 		// Try compiling with a GLSL 4.0 feature (textureQueryLod) and GLSL 4.3 feature (SSBOs) to determine support
 		QString gl43shader = "#version 430\nlayout(std430, binding = 2) buffer _ssbo { struct { int a; } _obj[1024]; };\nvoid main() {}";
 		QString gl40shader = "#version 400\nuniform sampler2D _sampler;\nout vec2 _lod;\nvoid main() { _lod = textureQueryLod(_sampler, vec2(0.0, 0.0)); }";
@@ -98,6 +130,8 @@ namespace CppProject
 			gl40Supported = true;
 			glslVersion = "400";
 
+			// SSBO batching requires desktop GL 4.3 - no ES equivalent exists
+			// (glShaderStorageBlockBinding), never attempted on Android. See CLAUDE.md §5.1.1.
 			if (ENABLE_OPENGL_43 && sh.compileSourceCode(gl43shader))
 			{
 				gl43Supported = true;
@@ -109,6 +143,7 @@ namespace CppProject
 		}
 		GraphicsApiHandler::glEnableLogger = true;
 		qInstallMessageHandler(oldHandler);
+	#endif
 
 		DEBUG("GLSL version " + glslVersion);
 	#endif
@@ -116,10 +151,30 @@ namespace CppProject
 
 	void Shader::Load(BoolType useCache)
 	{
+#if defined(Q_OS_ANDROID)
+		// Fase 6 (2026-09-15) - confirming/denying B17 (CLAUDE.md §17, 2026-09-06: no shader
+		// bytecode cache on the OpenGL/Android backend, unlike D3D11's disk/.qrc cache) as the
+		// cause of a real-device measurement (PERF_LOG.md) showing ~6s between process start
+		// and the first asset-loading log line - more than the texture loading that follows
+		// it. Per-shader timing, not just a single total, so a single pathological shader
+		// isn't averaged away against the other 52.
+		Timer shaderLoadTimer;
+#endif
 		vsName = "/Shaders/" + name + ".vsh";
 		fsName = "/Shaders/" + name + ".fsh";
 
-	#if DEBUG_MODE
+	#if DEBUG_MODE && !defined(Q_OS_ANDROID)
+		// GM_SHADERS_DIR/ASSETS_DIR are absolute paths on the build HOST's filesystem (a dev
+		// convenience: edit shader source on the dev machine, see it live without repackaging
+		// .qrc). That live-reload workflow is meaningless on Android - there's no host
+		// filesystem to reach from the device - and the paths themselves can never resolve
+		// there (confirmed 2026-09-08 on a real device: all 49 .vsh reported "not found",
+		// one of them - shader_high_glint - then failed to compile from whatever fallback
+		// happened, see research/2026-09-08-fase1-first-device-run.md). The shaders are
+		// already embedded as Qt resources in index.qrc for exactly this reason (every
+		// platform's Release build already uses the ":Shaders/..." path below) - Android just
+		// needs to take that path unconditionally, Debug or Release, instead of the dev-only
+		// host-path branch.
 		QString gmVsName = GM_SHADERS_DIR "/" + name + "/" + name + ".vsh";
 		QString gmFsName = GM_SHADERS_DIR "/" + name + "/" + name + ".fsh";
 		if (QFile::exists(gmVsName) && QFile::exists(gmFsName))
@@ -198,6 +253,10 @@ namespace CppProject
 			uvRectUniform = uniforms[uniformNameMap["_uUvRect"]];
 			texRepeatUniform = uniforms[uniformNameMap["_uTexRepeat"]];
 		}
+
+#if defined(Q_OS_ANDROID)
+		DEBUG("Shader loaded: " + name + " (" + NumStr(shaderLoadTimer.ElapsedMs(), 1) + "ms)");
+#endif
 	}
 
 	BoolType Shader::IsLoaded() const
@@ -244,8 +303,9 @@ namespace CppProject
 			memset(batchBufferData, 0, batchBufferSize);
 			batchBufferObjectIndex = 0;
 
-		#if API_OPENGL
-			// Bind SSBO
+		#if API_OPENGL && !defined(Q_OS_ANDROID)
+			// Bind SSBO - no ES equivalent, useBatching is always false on Android
+			// (ShaderLoadOpenGL.cpp), so this is never reached there. See CLAUDE.md §5.1.1.
 			gl43Core->glShaderStorageBlockBinding(program->programId(), glSsboBlockIndex, 2);
 			GL_CHECK_ERROR();
 		#endif
@@ -524,6 +584,7 @@ namespace CppProject
 
 		// Bind new id to sampler
 		SamplerState& state = samplerState[sampler];
+
 		if (state.currentTexId != id)
 		{
 			if (state.currentTexId > -1)
@@ -676,7 +737,15 @@ namespace CppProject
 				GFX->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 				GFX->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 				GFX->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+			#ifndef Q_OS_ANDROID
+				// GL_TEXTURE_LOD_BIAS is desktop-only fixed-function state, no ES equivalent
+				// (ES exposes per-sample bias only as an optional argument to texture() in the
+				// shader itself, not as texture object state) - confirmed 2026-09-06 with a
+				// real Android build attempt ("use of undeclared identifier"). Skipping it here
+				// means Android never applies user-adjustable mip LOD bias; revisit as a shader
+				// uniform if this turns out to matter once the ES shader backend exists (0.5).
 				GFX->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, GFX->lodBias);
+			#endif
 				GL_CHECK_ERROR();
 
 				program->setUniformValue(state.glLocation, (GLint)s);

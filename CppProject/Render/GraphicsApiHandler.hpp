@@ -8,7 +8,7 @@
 #define GFX GraphicsApiHandler::handler
 
 #if API_OPENGL
-#include <QOpenGLFunctions_3_1>
+#include <QOpenGLExtraFunctions>
 #include <QOffscreenSurface>
 
 #if DEBUG_MODE
@@ -39,7 +39,7 @@ namespace CppProject
 
 	struct GraphicsApiHandler
 	#if API_OPENGL
-		: QOpenGLFunctions_3_1
+		: QOpenGLExtraFunctions
 	#endif
 	{
 		// Runs before QApp creation.

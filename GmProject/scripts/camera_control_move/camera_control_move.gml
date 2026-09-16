@@ -6,10 +6,22 @@
 function camera_control_move(cam, lockx, locky)
 {
 	var mx, my;
-	mx = -((display_mouse_get_x() - lockx) / 8) * setting_look_sensitivity
-	my = -((display_mouse_get_y() - locky) / 8) * setting_look_sensitivity
-	display_mouse_set(lockx, locky)
-	
+
+	// INSTRUMENTAL, no es el diseño de input táctil elegido - mismo motivo y mismo alcance
+	// que el guard equivalente en camera_control_rotate.gml (ver el comentario ahí y
+	// KNOWN_ISSUES.md). No repetir este patrón como si fuera la solución de Fase 4.
+	if (platform_get() == e_platform.ANDROID)
+	{
+		mx = -(mouse_dx / 8) * setting_look_sensitivity
+		my = -(mouse_dy / 8) * setting_look_sensitivity
+	}
+	else
+	{
+		mx = -((display_mouse_get_x() - lockx) / 8) * setting_look_sensitivity
+		my = -((display_mouse_get_y() - locky) / 8) * setting_look_sensitivity
+		display_mouse_set(lockx, locky)
+	}
+
 	if (!cam)
 	{
 		var move, spd, spdm, xd, yd, zd;
@@ -32,22 +44,22 @@ function camera_control_move(cam, lockx, locky)
 			spdm = setting_fast_modifier
 		if (keybinds[e_keybind.CAM_SLOW].active)
 			spdm = setting_slow_modifier
-		
+
 		xd = 0
 		yd = 0
-		
+
 		if (keybinds[e_keybind.CAM_RIGHT].active)
 		{
 			xd += -sin(degtorad(cam_work_angle_look_xy)) * move
 			yd += -cos(degtorad(cam_work_angle_look_xy)) * move
 		}
-		
+
 		if (keybinds[e_keybind.CAM_LEFT].active)
 		{
 			xd += sin(degtorad(cam_work_angle_look_xy)) * move
 			yd += cos(degtorad(cam_work_angle_look_xy)) * move
 		}
-		
+
 		xd += -lengthdir_x(spd, cam_work_angle_look_xy)
 		yd += -lengthdir_y(spd, cam_work_angle_look_xy)
 		zd = (keybinds[e_keybind.CAM_ASCEND].active - keybinds[e_keybind.CAM_DESCEND].active) * move

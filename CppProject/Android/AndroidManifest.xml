@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!--
+	Package source dir for androiddeployqt (QT_ANDROID_PACKAGE_SOURCE_DIR in CMakeLists.txt).
+	Based on the stock Qt 5.15.19 template at qt5/qtbase/src/android/templates/AndroidManifest.xml.
+
+	package="org.internal.testbuild" is a DELIBERATE PLACEHOLDER for Fase 1 (internal
+	compile/run validation, not for distribution). David Andrei authorized a mobile port
+	under a name that is NOT a recognizable variation of "Mine-imator" (CLAUDE.md §9.3/§9.5) -
+	the real package/app name is a pending user decision, not something to bake in here.
+	Replace org.internal.testbuild / "Internal Test Build" before any real distribution.
+-->
+<manifest package="org.internal.testbuild" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="0.0.2" android:versionCode="2" android:installLocation="auto">
+	<!-- %%INSERT_PERMISSIONS -->
+	<!-- %%INSERT_FEATURES -->
+
+	<!-- Auto-update (2026-09-15, user request) - lets the app install a newer APK it
+	     downloaded itself, from a GitHub Releases asset (github.com/Slytherking50/
+	     Mine-Imator-Mobile, public repo - CLAUDE.md §9.3, David Andrei's authorization covers
+	     "Google Play or wherever you want"). Android still requires the user to grant this
+	     app "Install unknown apps" once, in system settings - this permission alone doesn't
+	     bypass that, it only lets the app REQUEST the installer without needing a separate
+	     third-party installer app in the loop. -->
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
+	<supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
+	<application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="Mine-Imator: Mobile" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowNativeHeapPointerTagging="false" android:allowBackup="true" android:fullBackupOnly="false">
+		<activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="org.internal.testbuild.MineImatorActivity" android:label="Mine-Imator: Mobile" android:screenOrientation="sensorLandscape" android:launchMode="singleTop" android:exported="true">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN"/>
+				<category android:name="android.intent.category.LAUNCHER"/>
+			</intent-filter>
+
+			<meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
+			<meta-data android:name="android.app.qt_sources_resource_id" android:resource="@array/qt_sources"/>
+			<meta-data android:name="android.app.repository" android:value="default"/>
+			<meta-data android:name="android.app.qt_libs_resource_id" android:resource="@array/qt_libs"/>
+			<meta-data android:name="android.app.bundled_libs_resource_id" android:resource="@array/bundled_libs"/>
+			<meta-data android:name="android.app.bundle_local_qt_libs" android:value="-- %%BUNDLE_LOCAL_QT_LIBS%% --"/>
+
+			<meta-data android:name="android.app.use_local_qt_libs" android:value="-- %%USE_LOCAL_QT_LIBS%% --"/>
+			<meta-data android:name="android.app.libs_prefix" android:value="/data/local/tmp/qt/"/>
+			<meta-data android:name="android.app.load_local_libs_resource_id" android:resource="@array/load_local_libs"/>
+			<meta-data android:name="android.app.load_local_jars" android:value="-- %%INSERT_LOCAL_JARS%% --"/>
+			<meta-data android:name="android.app.static_init_classes" android:value="-- %%INSERT_INIT_CLASSES%% --"/>
+			<meta-data android:value="@string/ministro_not_found_msg" android:name="android.app.ministro_not_found_msg"/>
+			<meta-data android:value="@string/ministro_needed_msg" android:name="android.app.ministro_needed_msg"/>
+			<meta-data android:value="@string/fatal_error_msg" android:name="android.app.fatal_error_msg"/>
+			<meta-data android:value="@string/unsupported_android_version" android:name="android.app.unsupported_android_version"/>
+
+			<!-- Background running: false because Mine-imator holds a live GL context/render
+			     state (B3, CLAUDE.md §8) with no lifecycle hooks yet - drawing after suspend
+			     would crash. Revisit once B3 has a real fix. -->
+			<meta-data android:name="android.app.background_running" android:value="false"/>
+
+			<meta-data android:name="android.app.auto_screen_scale_factor" android:value="false"/>
+
+			<!-- "full" because the app uses QtWidgets (not Quick Controls) for its shell window -->
+			<meta-data android:name="android.app.extract_android_style" android:value="full"/>
+		</activity>
+
+		<!-- Auto-update (2026-09-15) - required to hand the downloaded APK to Android's
+		     package installer as a content:// URI. A raw file:// path is blocked by
+		     FileUriExposedException on API 24+; this is the standard replacement. Points at
+		     the app's own external files dir (res/xml/file_paths.xml) - same directory
+		     downloaded_file_get() below writes the APK to, no other files exposed. Authority
+		     includes the real package name at runtime via ${applicationId}, matching the
+		     convention every other FileProvider-using Android app uses to avoid clashing with
+		     another app's provider of the same name. -->
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="${applicationId}.fileprovider"
+			android:exported="false"
+			android:grantUriPermissions="true">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/file_paths"/>
+		</provider>
+	</application>
+</manifest>

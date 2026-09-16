@@ -9,22 +9,32 @@ function window_draw_startup()
 	content_mouseon = app_mouse_box(content_x, content_y, content_width, content_height) && !popup_mouseon && !toast_mouseon && !context_menu_mouseon
 	
 	// Draw background
-	var headersize = 144;
+	// This screen's editor counterpart is tuned right at the global interface_scale (1.65,
+	// UtilFunc.cpp) - beta feedback (2026-09-11) confirmed the editor is correct at that value
+	// but THIS screen still looks too big at the same scale. Can't lower interface_scale itself
+	// (it's the one global App->scale, shared by every screen - would undo the editor fix), so
+	// this header block gets its own local counter-scale instead, same self-correcting
+	// division-by-scale technique as bench_draw.gml's content_width. logoscale applies to the
+	// header height AND the logo AND its position-dependent offsets together, all by the same
+	// factor, so their proportions to each other stay exactly what they are on desktop - only
+	// the whole block's footprint shrinks. True no-op on desktop (logoscale = 1).
+	var logoscale = (platform_get() == e_platform.ANDROID) ? (1 / setting_interface_scale) : 1;
+	var headersize = 144 * logoscale;
 	draw_clear_alpha(c_level_middle, 1)
 	draw_pattern(0, headersize, window_width, window_height - headersize)
-	
+
 	// Header
 	draw_box(0, 0, window_width, headersize, false, c_level_top, 1)
 	draw_divide(0, headersize, window_width)
-	
+
 	// Logo
-	draw_sprite(spr_logo, 0, window_width / 2, headersize/2)
-	
+	draw_sprite_ext(spr_logo, 0, window_width / 2, headersize/2, logoscale, logoscale, 0, c_white, 1)
+
 	// Version
 	var trial = (trial_version ? " " + text_get("startuptrial") : "");
-	draw_button_text(text_get("startupversion", mineimator_version_full + trial), (window_width / 2) + 259, floor((headersize/2) + (sprite_get_height(spr_logo)/2)) + 3, popup_switch, popup_about)
-	
-	dy = headersize + 48
+	draw_button_text(text_get("startupversion", mineimator_version_full + trial), (window_width / 2) + (259 * logoscale), floor((headersize/2) + ((sprite_get_height(spr_logo) * logoscale)/2)) + (3 * logoscale), popup_switch, popup_about)
+
+	dy = headersize + (48 * logoscale)
 	dw = min(window_width - 48, 1008)
 	
 	// No recent projects text
@@ -100,8 +110,8 @@ function window_draw_startup()
 		if (settings_menu_name = "startupsortby" && settings_menu_ani_type != "hide")
 			current_microani.active.value = true
 		
-		dy += 72
-		
+		dy += 72 * logoscale
+
 		var listheight;
 		
 		if (recent_display_mode = "list")

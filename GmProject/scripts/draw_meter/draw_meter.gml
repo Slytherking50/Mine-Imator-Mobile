@@ -15,7 +15,7 @@
 function draw_meter(name, xx, yy, wid, value, minval, maxval, def, snapval, tbx, script, tip = "")
 {
 	var hei, thumbhei, linex, linewid, trackx, trackwid, dragval, dragx, dragy, mouseon, slidermouseon, locked, inputfocus;
-	thumbhei = 20
+	thumbhei = ui_touch_meter_thumb_height
 	hei = (thumbhei + 24)
 	locked = (minval = maxval)
 	

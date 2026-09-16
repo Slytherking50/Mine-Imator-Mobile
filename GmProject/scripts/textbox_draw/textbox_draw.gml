@@ -67,6 +67,13 @@ function textbox_draw(tbx, xx, yy, w, h, contextmenu = true, right = false)
 		var keys, key_press, action;
 		textbox_isediting = true
 		textbox_isediting_respond = true
+		// gmlGlobal:: (read from KeyChecker::inputMethodQuery(), AppWindow.cpp) is a fixed,
+		// closed set of GameMaker's own built-in engine variables (GmlFunc.hpp - confirmed by
+		// reading its generated struct, not assumed) - it can't carry a custom GML value like
+		// this field's rect no matter how the global is declared. Passed as a CppSeparate
+		// function call instead (same pattern as interface_scale_set), which stores it as a
+		// plain hand-written C++ member.
+		keyboard_field_set(xx, yy, w, h)
 		
 		if (textbox_lastfocus != tbx) // Select all
 		{

@@ -1,0 +1,396 @@
+# Known issues
+
+## B34: `CppGen.exe` "crasheaba" — en realidad era un error de invocación propio, no un bug de CppGen (2026-09-16, RESUELTO)
+
+**Estado: RESUELTO. No era un bug de CppGen — era estar corriendo el ejecutable desde el directorio equivocado.**
+
+**Investigación real hecha antes de encontrar la causa (queda documentada porque llevó a instalar WinDbg, que vale la pena tener):** el "crash" reportaba `STATUS_STACK_BUFFER_OVERRUN` (0xC0000409) vía el Visor de eventos de Windows, con `ucrtbase.dll` como módulo con errores — eso llevó a sospechar de un desbordamiento de buffer real. Se descartó con evidencia: no eran los 3 archivos GML tocados esta sesión (revertidos uno por uno, seguía "crasheando"), no era el largo de `PATH`, no era espacio en disco, no era un binario corrupto (recompilado desde cero con VS2019, mismo resultado). Se instaló WinDbg (`winget install Microsoft.WinDbg`) para leer los volcados de crash reales (`%LOCALAPPDATA%\CrashDumps\CppGen.exe.*.dmp`) — ahí apareció la causa real.
+
+**Causa real, confirmada con el stack trace completo (símbolos + PDB de un build Debug propio):** `0xC0000409` también es el código que usa `abort()`/`std::terminate()` para salida "fast-fail" — **no siempre significa corrupción de stack real**, y acá no lo era. El stack mostró una excepción de C++ sin atrapar: `std::filesystem::directory_iterator` (`CppGen::Directory::getFiles`, `Runtime.hpp:873`) lanzando `filesystem_error` porque el directorio que intentaba iterar no existía.
+
+**Por qué no existía:** `CppGen::Program::main()` (`Program.cpp:7-9`), cuando se lo corre sin argumentos, calcula la raíz del repo así:
+```cpp
+String repoRootDir = args.size() > 0
+    ? args[0].toPath()
+    : fsString(fs::current_path().parent_path().parent_path());
+```
+Es decir, **asume que el directorio de trabajo actual es `CppGen/Win64/` (dos niveles por debajo de la raíz del repo)** y sube dos niveles para encontrarla. Yo lo estuve corriendo desde la raíz del repo (`Mine-imator/`) en cada intento de esta sesión — eso hace que `repoRootDir` resuelva dos niveles ARRIBA de la raíz real (`Desktop/`, no `Mine-imator/`), `gmDir` apunta a una carpeta `GmProject` que no existe ahí, y el primer intento de listar sus archivos (`DirectoryInfo(gmDir).getFiles("*.yyp")`, `Program.cpp:18`) tira la excepción **antes de que el propio chequeo "FATAL ERROR: No GameMaker project found" (pensado justamente para este caso) llegue a imprimirse** — de ahí que no hubiera ningún log ni mensaje, solo un crash instantáneo y silencioso.
+
+**Fix: ninguno al código — solo correrlo bien.** Confirmado corriendo `CppGen.exe` desde `CppGen/Win64/` (`cd CppGen/Win64 && ./CppGen.exe`, sin argumentos): `Success!`, `63 files were updated`, exit 0 — incluye la instrumentación de timing de Fase 6, ya propagada a `CppProject/Generated/`.
+
+**Nota para el futuro, para no repetir esto:** `CppGen.exe` no es robusto a un directorio de trabajo incorrecto (el `filesystem_error` sin atrapar podría arreglarse en el código — envolver la llamada en `try/catch` y mostrar el "FATAL ERROR" real — pero no es necesario si simplemente se lo corre siempre desde `CppGen/Win64/`, o pasándole `repoRootDir` como primer argumento explícito).
+
+## B33: `Shader::BeginUse()` puede fallar en silencio — rendering corrupto sin ningún log hasta ahora (encontrado 2026-09-16, mitigado, causa raíz sin confirmar)
+
+**Estado: mitigado (ahora se loguea el fallo), causa raíz de POR QUÉ falla todavía sin confirmar — necesita otra ronda con dispositivo.**
+
+**Cómo se encontró:** el usuario reportó un render con bloques/paredes de un morado incorrecto y mobs (spider, esqueleto) en un lugar que no correspondía, justo después de instalar el build de esta sesión. Revisando `log.txt` real del dispositivo (no asumido) alrededor del momento reportado, aparecieron 2 ráfagas de errores reales de OpenGL, ambas justo después de `Show popup: exportimage`:
+```
+[OpenGL ERROR] INVALID_OPERATION in SubmitVertices:749
+[OpenGL ERROR] INVALID_OPERATION in SetAttributes:61
+[OpenGL ERROR] INVALID_OPERATION in SubmitVertices:847
+```
+`SetAttributes:61` (`Vertex.cpp:61`) es el `GL_CHECK_ERROR()` dentro de `PrimitiveVertex::SetAttributes()`, justo después de `prog->enableAttributeArray(...)`. `SubmitVertices:749/847` (`Shader.cpp`) son los dos `GL_CHECK_ERROR()` de `Shader::SubmitVertices()` (bind de samplers y `glDrawElements`).
+
+**Gap real encontrado:** `Shader::BeginUse()` (`Shader.cpp:271`) devuelve `bool` — `false` si `program->bind()` falla — pero **los 4 call sites del proyecto entero ignoraban ese valor de retorno** (`AppHandler.cpp` loop principal de render, `RenderFunc.cpp` `shader_reset()`/`shader_set()`, `GLWidget.cpp` composite final swapchain→pantalla). Si `bind()` falla, el código seguía llamando `SetAttributes()`/`SubmitVertices()` igual, sobre lo que sea que haya quedado bindeado de verdad en GL — exactamente el patrón de `INVALID_OPERATION` visto en el log. El de `GLWidget.cpp` es el más sospechoso de causar directamente lo que vio el usuario: es el shader del blit final que compone la superficie renderizada contra la pantalla real — si ese `BeginUse()` falla, el blit final se dibuja con el programa/atributos que hayan quedado de un shader anterior (mundo/UI), lo que explicaría contenido visiblemente incorrecto en pantalla, no solo un error de log.
+
+**Mitigación aplicada:** los 4 call sites ahora chequean el retorno y loguean un `[WARNING]` explícito si falla. Cero cambio de comportamiento cuando `BeginUse()` funciona bien (la inmensa mayoría de los frames) — esto no arregla la causa de por qué `bind()` falla a veces, solo la hace visible en vez de silenciosa.
+
+**No confirmado todavía:** por qué `program->bind()` falla justo cuando se abre un popup. Hipótesis a investigar la próxima vez que haya log fresco: algún evento de Qt (resize, teclado virtual, u otro) dejando el contexto GL no-actual momentáneamente en Android. Con el log ahora explícito, la próxima repetición del bug va a decir EXACTAMENTE en cuál de los 4 sitios falló, en vez de tener que inferirlo por correlación de timestamps como esta vez.
+
+**Aparte, investigando esto:** se confirmó que el paquete `Game Base.midata`/`.zip` (el placeholder de Minecraft para Android, B25) **no es lo que la documentación de B25 describe** — no son 10 PNGs generados por código en gris, son 2.847 archivos con nombres y colores reales de texturas de Minecraft (confirmado leyendo píxeles reales: madera de acacia en tonos marrón/naranja auténticos), ~3.8MB, fechado 12 de septiembre (antes de esta sesión). Esto contradice directamente `CLAUDE.md` §9.4 (nunca empaquetar assets reales de Minecraft para Android). **No investigado más a fondo todavía — el usuario no sabía cómo pasó esto ("no sé we") y pidió priorizar el bug visual primero.** Queda como el hallazgo más urgente para la próxima sesión: confirmar si esto es lo que se está empaquetando hoy en el APK de Android, y si es así, es un `[GATE]` legal que hay que parar y resolver, no solo documentar.
+
+## B32: build de Android rompía con `androidx.core` sin `android.useAndroidX=true` (2026-09-16)
+
+**Estado: RESUELTO.** `':compileDebugAidl'` fallaba con "Configuration `:debugRuntimeClasspath` contains AndroidX dependencies, but the `android.useAndroidX` property is not enabled" — confirmado en el log real del daemon de Gradle (`~/.gradle/daemon/8.9/daemon-*.out.log`, `BUILD FAILED in 42s`, no la Trampa T4 esta vez, un fallo real). Causa: `androidx.core:core:1.13.1` (agregado esta sesión para `FileProvider`, auto-update) es la primera dependencia AndroidX del proyecto — nunca hizo falta esta propiedad antes.
+
+**Fix:** `CppProject/Android/gradle.properties` (archivo nuevo, no existía) con `android.useAndroidX=true`. Verificado leyendo el código real de `androiddeployqt` (`main.cpp`, `copyFiles()`/`readGradleProperties`/`mergeGradleProperties`) antes de asumir dónde poner el archivo: `ANDROID_PACKAGE_SOURCE_DIR` (`CppProject/Android/`) se copia completo al árbol de build en cada corrida, y la generación de `gradle.properties` de androiddeployqt LEE y MEZCLA sobre lo que ya esté ahí en vez de sobreescribir — así que esta clave sobrevive junto a las que androiddeployqt gestiona (`qtMinSdkVersion`, etc.), a diferencia de editar directamente el `gradle.properties` generado (que sí se pierde en un build limpio).
+
+## B31: calidad de letras degradada en Android — regresión reportada por el usuario, no presente en versiones anteriores (2026-09-16)
+
+**Estado: sin resolver. Se intentó un fix (reaplicar KI-1) que resultó ser una regresión peor y fue revertido de nuevo el mismo día — ver KI-1.** Reportado originalmente en el teléfono de un amigo (no el Redmi 10C de referencia), lo que ya apuntaba a algo sensible a densidad/resolución del dispositivo.
+
+**Síntoma reportado por el usuario:** "Las letras se ven de mala calidad y eso no me había pasado en otras versiones" — regresión respecto de instalaciones anteriores del propio port.
+
+**Intento de fix (2026-09-16):** se encontró que KI-1 (desajuste entre el tamaño de la superficie de render y `App->scale`) era un candidato fuerte — un fix ya validado en 2026-09-09 pero perdido en un revert no relacionado. Se reaplicó, pero causó una regresión visible confirmada por captura real (popups/pantalla de carga recortados y reescalados) — revertido de nuevo, ver KI-1 para el detalle completo. **B31 sigue sin resolver y sin ese camino disponible tal cual** — KI-1 necesitaría re-verificarse contra toda la UI de Android actual (no solo el repro original) antes de poder reintentarse como fix de B31.
+
+**Hipótesis todavía sin descartar:** (a) `interface_scale_default_get()` fijo en 1.65 (B27) mal calibrado para un dispositivo con densidad distinta al Redmi 10C; (b) un cambio de filtrado/mipmapping en las texturas de fuente. Necesita: dispositivo real del amigo (o sus specs de pantalla) y una captura/zoom del texto afectado.
+
+## B30: crash al asignar una skin de Minecraft en Android (2026-09-16)
+
+**Estado: reportado, sin investigar todavía.** Cola: después del rebuild de Qt-Android con OpenSSL (auto-update, en curso al momento de este registro).
+
+**Síntoma reportado por el usuario, probando la build actual en el Redmi 10C:** "Apenas quise poner mi skin de Minecraft crasheo la aplicación" — crash inmediato al intentar asignar/cargar una skin.
+
+**Investigado sin dispositivo (2026-09-16) — mitigación aplicada, causa raíz NO confirmada.** Rastreado el flujo real hasta `action_bench_model_tex.gml` (`e_option.BROWSE`, "poner la skin del personaje" en el workbench) → `file_dialog_open_image_pack()` → SAF (`get_open_filename_ext`, `content://`) → `android_resolve_content_uri()` (`FileFunc.cpp`, agregada esta misma sesión para el fix de B4). El popup de "descargar skin por usuario" (`popup_downloadskin_draw.gml`) es un camino aparte, 100% por red — más improbable para un crash inmediato, no se tocó.
+
+**Gap real encontrado en `android_resolve_content_uri()`:** si el content provider del picker no expone `DISPLAY_NAME` (cae al literal `"content_import"`, sin extensión) o lo expone sin extensión (algunos pickers de galería devuelven un id de documento pelado), el archivo local copiado queda sin extensión — y `res_load()`/los loaders de imagen de este codebase despachan por extensión de archivo. Es un gap real, confirmado leyendo el código, pero **no confirmado como la causa de este crash puntual** sin el `log.txt` del teléfono del amigo.
+
+**Fix defensivo aplicado:** si `DISPLAY_NAME` no trae extensión, se consulta el MIME type real vía `ContentResolver.getType(uri)` (funciona para cualquier provider, no depende de que también exponga `DISPLAY_NAME`) y se infiere `.png`/`.jpg`/`.zip` antes de armar el nombre del archivo local. Cierra el gap real independientemente de si es la causa exacta de este crash.
+
+**Sigue pendiente:** confirmar la causa real. Primer lugar a mirar cuando haya acceso a ese dispositivo: `log.txt` de la app (`adb shell run-as <pkg> cat //data/user/0/<pkg>/files/Mine-imator/log.txt`, método ya establecido en esta sesión) inmediatamente después de reproducir el crash.
+
+## B29: franja negra en un borde en landscape — Android reservaba el área del cutout de cámara (2026-09-11)
+
+**Estado: RESUELTO y verificado en dispositivo real.**
+
+**Síntoma real, reportado por beta testers:** una franja negra sólida en uno de los bordes laterales de la pantalla en el editor — Mine-imator no ocupaba el ancho completo del dispositivo.
+
+**Causa raíz, confirmada con evidencia real (no asumida):** `adb shell dumpsys window displays` en el dispositivo de referencia (220333QL, Android 13/API 33) mostró un cutout de cámara real — `DisplayCutout{insets=Rect(0, 49 - 0, 0)... Rect(320,0-400,49)}`, un notch de 49px centrado en el borde superior FÍSICO (portrait). La app está fijada a `sensorLandscape` (`AndroidManifest.xml`) — ese cutout de "borde superior en portrait" rota junto con la pantalla y termina siendo un cutout de borde IZQUIERDO/DERECHO en landscape. Por defecto, Android reserva esa área fuera del contenido de la ventana — `window_get_width()/height()` (`WindowFunc.cpp`) leen fielmente `AppWin->width()/height()` de Qt, que reportaba, correctamente, una ventana genuinamente más chica que la pantalla física porque Android se la achicaba a propósito para esquivar el cutout. No es un bug de lectura ni algo que necesitara un ajuste manual de posición.
+
+**Fix:** `MineImatorActivity.java` (la Activity propia, ya existía para `FLAG_KEEP_SCREEN_ON`) ahora también setea `layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` (API 30+, con fallback a `SHORT_EDGES` en API 28-29) — el mecanismo estándar de Android para decirle a la ventana que dibuje DEBAJO del cutout en vez de reservarlo, en cualquier borde. **Generaliza a otros dispositivos automáticamente**, sin números específicos de este teléfono: con cutout, dibuja debajo; sin cutout, no hace nada. No relacionado con el intento anterior y revertido de forzar `setGeometry()` en el `QMainWindow` (§17, 2026-09-09 — eso lo interpretó MIUI como pedido de ventana flotante); esto solo toca un atributo de ventana que Android define para este propósito exacto.
+
+## B28: popup del workbench sin scroll — con muchas opciones, el botón "Agregar" queda fuera de pantalla en Android (2026-09-11)
+
+**Estado: MITIGADO (recorte de altura), NO resuelto de raíz — el fix real necesita scroll interno, fuera de alcance de esta pasada.**
+
+**Síntoma real, reportado por beta testers en dispositivo real:** al abrir el workbench con un tipo de contenido (ej. Character con mapas de material) que necesita varios botones apilados (preview, lista, estados, skin, material map, normal map...), el botón "Agregar" no aparecía en absoluto.
+
+**Causa raíz:** `bench_draw.gml` nunca tuvo un tope de altura — el popup crece libremente para ajustarse a lo que el tipo seleccionado necesite (`bench_settings.height_goal = dy - sdy`, sin `min()` contra nada). El botón "Agregar" (`bench_draw_settings.gml`, `draw_button_label("benchcreate", ..., sy + dh - 56, ...)`) se ancla al FONDO de esa altura sin límite. En un monitor de escritorio nunca hay contenido tan alto como para que esto importe; en un teléfono en horizontal, con poco alto disponible, el contenido de un tipo con varias opciones supera fácilmente los ~300-400px disponibles y el botón termina posicionado más abajo de lo que la pantalla puede mostrar — sin ningún scroll para alcanzarlo. No relacionado con el fix de `content_width` de la misma sesión (ese achica el ANCHO; esto es sobre ALTO) — es un bug latente que la pantalla chica del teléfono expone, no algo introducido por esa corrección.
+
+**Mitigación aplicada:** en Android, `bench_settings.height_goal` se recorta a lo que realmente entra entre `bench_settings.posy` y el borde inferior de la pantalla (`window_height - bench_settings.posy - 16`). Esto garantiza que el botón "Agregar" SIEMPRE quede dentro del área visible — al costo de recortar visualmente contenido intermedio (algunos botones de textura) cuando un tipo tiene demasiadas opciones para el espacio disponible. Cero cambio en desktop.
+
+**Pendiente, fuera de esta pasada:** la solución de raíz es hacer scrollable el contenido intermedio (entre el preview/lista de arriba y el botón "Agregar" de abajo), no solo recortar la altura total. Requiere agregar un mecanismo de scroll a `bench_draw_settings.gml` que hoy no existe — más trabajo que un ajuste de tamaño, evaluar si se prioriza dentro de Fase 3 paso 8 (colorpicker/sortlist) o aparte.
+
+## B27: primera instalación siempre arranca con la UI chica, sin importar la plataforma (2026-09-11)
+
+**Estado: RESUELTO — bug preexistente del motor base (no introducido por el trabajo de Android de esta sesión, y no específico de Android; afecta desktop igual).**
+
+**Síntoma real, reportado por beta testers:** la primera vez que se abre Mine-imator (instalación limpia, sin `settings.midata` todavía) la interfaz se renderiza chica; al cerrar y volver a abrir, se ve del tamaño correcto.
+
+**Causa raíz:** `interface_scale_set()` (`UtilFunc.cpp:374`) es la única función que empuja el factor de escala calculado hacia el motor C++ (`App->scale`, `AppHandler.hpp:87`, default `1.0`). En todo el proyecto se llama desde un solo lugar: `settings_load.gml:136`. `settings_load()` corta en `return 0` en la línea 17 si `settings.midata` todavía no existe (`settings_load.gml:16-17`) — es decir, en la primera instalación nunca llega a esa línea. `settings_startup()` sí calcula el valor correcto (`setting_interface_scale = interface_scale_default_get()`, que en Windows/Linux hace `qApp->desktop()->logicalDpiX() / 96.0` — por ejemplo 1.25 en un monitor al 125%), pero nunca lo aplicaba al motor la primera vez: `App->scale` se quedaba en su default `1.0`, renderizando más chico que la escala real del sistema. En el segundo arranque ya existe el archivo de settings, `settings_load()` sí llega a la línea que llama `interface_scale_set()`, y ahí se ve correcto.
+
+**Fix:** una línea en `settings_startup.gml`, justo después de calcular `setting_interface_scale` — llamar `interface_scale_set(setting_interface_scale)` ahí también, para que el primer arranque quede consistente con todos los siguientes. `settings_load()` sigue re-aplicándolo un momento después sin cambios (auto o manual, según lo que el usuario tenga guardado) — llamada duplicada e inofensiva cuando el archivo sí existe.
+
+**No específico de Android:** `interface_scale_default_get()`/`interface_scale_set()` no tienen ninguna rama condicional por plataforma (`CppProject` grep confirmó una sola implementación de cada una) — el fix aplica igual a Windows, Mac, Linux y Android.
+
+## B26: no hay ningún camino automático para conseguir assets de Minecraft — ni en Android ni en escritorio (2026-09-10)
+
+**Estado: limitación real, documentada. No es un bug puntual, es una brecha estructural — no tiene un "fix" chico.**
+
+**Contexto:** al discutir cómo darle a Android una versión real de Minecraft (más allá del placeholder de B25), el usuario pidió verificar dos cosas concretas antes de decidir cualquier cosa, en vez de asumirlas. Las dos confirmaron una brecha más grande de lo que parecía.
+
+**Verificación 1 — ¿existe un conversor de `.jar` de Minecraft en el proyecto?** No, en ningún lado. Se rastreó la única función de UI relacionada, el selector de "versión de Minecraft" en Configuración:
+- `tab_settings_program.gml` → `draw_button_menu("settingsminecraftversion", e_menu.LIST, ...)`
+- Sus opciones se llenan en `list_init.gml`, caso `"settingsminecraftversion"`: `file_find(minecraft_directory, ".midata")` — literalmente lista los archivos `.midata` que YA están en la carpeta.
+- `action_setting_minecraft_assets_version.gml`: solo cambia cuál de esos archivos ya presentes está activo.
+
+No hay ningún selector de archivo, ni manejo de `.jar`, ni parseo de blockstates/modelos/texturas desde un jar en ningún lado — se grepeó `GmProject/scripts` completo y `CppProject/World`+`CppProject/Library` con los términos `.jar`, `blockstate`, `atlas`, `install_version`, `import_version`, `convert`, sin ningún resultado relevante. El `.zip`+`.midata` que trae escritorio (`1.20.2`) es un paquete que alguien generó con una herramienta que no está en este repo, en algún momento anterior — no algo que el programa sepa generar.
+
+**Verificación 2 — ¿`mineimator.com/assets.php` no tiene versiones, o no lo podemos consultar?** Se verificó con **el build de escritorio real** (no solo `curl` desde esta sesión), que tiene HTTPS funcional (a diferencia de Android, ver B22) — se corrió `Mine-imator.exe`, se dejó completar su chequeo de arranque, y el log dice:
+```
+Using the latest assets
+```
+Esa línea (`app_event_http.gml:47`, rama `else` de "New assets available") solo se alcanza si el pedido HTTP tuvo éxito y el servidor respondió — si hubiera sido un problema de red/protocolo, el log mostraría un `[WARNING]` de error de conexión, como pasa en Android por B22. Confirmado además por separado con `curl` directo: `https://www.mineimator.com/assets/versions.midata` redirige (302) a `https://www.mineimator.com/assets.php`, que responde `200 OK` con `{"versions":[]}`. **El servidor está vivo y responde bien — simplemente no tiene ninguna versión publicada hoy.**
+
+**Conclusión, sin vueltas:** hoy, en este momento, no existe NINGÚN camino automático para que un usuario consiga assets de Minecraft, en ninguna plataforma:
+1. El `.zip` de fábrica de escritorio (`1.20.2`) eventualmente queda desactualizado, y no hay forma de refrescarlo salvo que `mineimator.com` vuelva a publicar versiones.
+2. Android nunca tuvo ese `.zip` de fábrica (decisión de B23, por copyright) y depende 100% de (1) o de que el usuario consiga y copie a mano un paquete convertido por otro medio, sin ninguna herramienta que lo ayude a generarlo.
+3. Escribir un conversor propio de `.jar` sería una funcionalidad NUEVA (no un fix) — parsear blockstates, modelos, generar atlas de texturas, biomas, partículas, etc.; semanas de trabajo, no algo para resolver de paso.
+
+**Impacto en la definición de éxito:** `CLAUDE.md` §16 afirmaba "Importar assets de Minecraft desde un `.jar` que él provee" como parte de v1.0 — corregido, esa fila describía una función que no existe. `CLAUDE.md` §9.4 también asumía que "los extrae de los `.jar` del usuario" es un camino funcional — corregido para separar el principio legal (que sigue en pie sin cambios) de la afirmación técnica (que no era cierta).
+
+**No resuelto en esta sesión, a propósito — es una decisión de producto, no un bug:** las opciones reales son (a) reportarle a quien mantenga `mineimator.com` que `assets.php` está vacío, la más barata pero fuera de nuestro control; (b) escribir un conversor de `.jar` propio, la única que depende 100% de este proyecto pero es trabajo de semanas; (c) aceptar la limitación tal cual está. Queda pendiente de decisión del usuario, no bloquea el resto de Fase 3.
+
+## B24: instalación limpia crasheaba al arrancar — `Data/` nunca se empaquetaba para Android (2026-09-10)
+
+**Estado: RESUELTO y verificado en dispositivo real (instalación limpia, no el dispositivo de referencia con archivos acumulados de sesiones anteriores).**
+
+**Síntoma real, reportado por el usuario:** compartió el APK con amigos; en un dispositivo sin ningún estado previo, la app crasheaba al arrancar con: *"The file /data/data/org.internal.testbuild/files/Data/legacy.midata could not be found."*
+
+**Por qué el dispositivo de referencia nunca mostró esto:** acumuló, en sesiones anteriores de esta misma investigación, archivos de `Data/` provisionados manualmente (probablemente durante el bring-up inicial de Fase 1) — nunca fue una instalación representativa de lo que un usuario real recibe. `CMakeLists.txt` ya tenía un comentario propio documentando esto como gap conocido: *"NOT done for Android, and not replaced by anything yet - real gap, not an oversight... has NOT been decided or investigated"* (tarea nueva de Fase 1 nunca cerrada).
+
+**Causa raíz:** `data_directory` (`legacy.midata`, `languages.midata`, `Languages/`, `Fonts/`, `Render/`, `Splashes/`) se resuelve a una ruta de archivo real (`working_directory + "Data/"`) en todas las plataformas. En desktop esa carpeta existe porque el build la copia al lado del ejecutable. En Android no hay ningún paso equivalente — `androiddeployqt` empaqueta el APK a su manera y ese `POST_BUILD copy`/`install()` de CMake simplemente no corre ahí, y nada lo reemplazaba.
+
+**Investigación antes de elegir el fix (a pedido explícito del usuario, no asumido):**
+- Se confirmó por grep que **no todo `Data/` es de solo lectura**: `language_add.gml` (importar idioma personalizado) escribe en `Languages/`+`languages.midata`, y `app_event_http.gml` (instalar una versión de Minecraft descargada) escribe en `Minecraft/`. Esto descartó la opción más simple (redirigir `data_directory` entero a un recurso Qt inmutable `:/Data/`) porque hubiera roto esas dos funciones en cuanto alguien las use.
+- Se inspeccionó el contenido real de `Data/Minecraft/1.20.2.zip` antes de empaquetarlo — ver B23, quedó excluido por una razón legal real, no por este bug.
+
+**Fix:** `data_directory` sigue siendo una ruta real y escribible en Android (sin cambios ahí) — lo que se agregó es `data_directory_seed_android()` (`GmProject/scripts/data_directory_seed_android/`), llamada al principio de `app_startup()`, que copia los 39 archivos de solo lectura de `Data/` (todo excepto `Libraries/*.dll`, sin uso porque `is_cpp()` siempre es `true`, y `Minecraft/`, ver B23) desde un recurso Qt embebido (`:/Data/...`, mismo mecanismo ya probado para los shaders) hacia el directorio real, si faltan o si su tamaño no coincide con el del recurso (`file_size_lib()`, función nueva en `Library/FileLib.cpp`/`file_size_lib.gml` — no existía, se agregó para esto). Un archivo `.bundle_version` fuerza una recopia completa si se sube `DATA_BUNDLE_VERSION`, para el caso de un archivo con el mismo tamaño pero contenido actualizado en una futura versión de la app.
+
+**Verificación pedida explícitamente por el usuario, no solo "existe":** el chequeo es por tamaño (`file_size_lib(src) != file_size_lib(dst)`), no por existencia sola — una copia truncada por una instalación interrumpida o disco lleno tiene un tamaño distinto y se vuelve a copiar.
+
+**Trampa de CppGen encontrada en el camino (ver `CLAUDE.md` §8.1 T3):** el archivo nuevo con la función de seeding daba "FATAL ERROR: Missing function" pese a estar bien registrado en `Mine-imator.yyp` — la causa real era un carácter no-ASCII (`§`) en el comentario del archivo, no la lógica. Confirmado por bisección (reducir el comentario a ASCII plano lo arregló, con el mismo cuerpo de función).
+
+**Mantenimiento pendiente de anotar:** la lista de 39 archivos en `data_directory_seed_android.gml` (`DATA_BUNDLE_FILES`) se mantiene a mano, en sincronía con el bloque `ANDROID_DATA_FILES` de `CMakeLists.txt` (que sí es automático vía `file(GLOB_RECURSE ...)`) — si se agrega o saca un archivo de `GmProject/datafiles/Data/`, hay que actualizar la lista a mano o quedará desincronizada. No hay una única fuente de verdad generada para esto todavía.
+
+## B25: sin ninguna versión de Minecraft, el arranque entero era fatal — no solo "sin bloques" (2026-09-10)
+
+**Nota de nombre (2026-09-11):** el paquete descrito abajo como "placeholder" se renombró a **"Game Base"** — mismos archivos, mismo contenido, mismo propósito. Motivo: `setting_minecraft_assets_version` (el nombre del archivo, sin extensión) es literalmente lo que se muestra en el selector de versión de Minecraft de Configuración (`list_init.gml`) — "placeholder" ahí se leía como algo roto/sin terminar, "Game Base" se lee como lo que es: una base vacía puesta a propósito. El resto de esta sección usa el nombre viejo tal como se escribió en su momento — donde diga "placeholder", hoy es "Game Base" (`Data/Minecraft/Game Base.midata`/`.zip`, `minecraft_placeholder_version = "Game Base"`).
+
+**Estado: RESUELTO y verificado en dispositivo real (instalación limpia, después de resolver B24). Fix final = paquete placeholder real, no el bypass de arranque de un intento anterior (ver "Camino descartado" abajo).**
+
+**Cómo se encontró:** al verificar B24 (crash de `legacy.midata`) con una instalación realmente limpia (`adb uninstall` + reinstalar), ese crash ya no aparecía, pero salió uno nuevo en su lugar: *"The Minecraft assets could not be loaded. Try re-installing Mine-imator. See the log for details."* — y la app se cerraba sola después de cerrar ese cartel.
+
+**Causa raíz:** `app_startup()` (`GmProject/scripts/app_startup/app_startup.gml:48`) trata que `minecraft_assets_startup()` devuelva `false` exactamente igual que un archivo core faltante (`legacy_file`/`language_file`): `app_event_create.gml` hace `if (!app_startup()) game_end()`. `minecraft_assets_startup()` devuelve `false` cuando no encuentra NINGUNA versión de Minecraft cargable (`minecraft_directory + version + ".midata"/.zip"`, con `version` primero desde `app.setting_minecraft_assets_version` y, si falla, un segundo intento con la constante `minecraft_version` = `"1.20.2"` — la misma versión ausente en Android por B23, así que el segundo intento falla siempre igual). En desktop este camino nunca se ejecuta en la práctica porque `1.20.2.zip` siempre está presente. En Android, tras excluir `Minecraft/` por B23, este es el estado NORMAL de cualquier instalación limpia — así que la app nunca podía abrir, ni para llegar a una pantalla donde hacer algo al respecto.
+
+**Camino descartado (probado primero, revertido):** la primera solución intentada fue hacer que `minecraft_assets_startup()`, al fallar en Android, saltara directo al mismo estado final que una carga exitosa (`window_state = "startup"` + `app_startup_interface()`), sin ningún dato de Minecraft cargado. Esto sí evitaba el `game_end()`, pero crasheaba de nuevo con `[FATAL ERROR] Invalid id 0 in Find:86` — `app_startup_interface_bench.gml:58` (`mc_assets.model_name_map[?default_model].default_state`) y el mismo patrón en `app_startup_interface_tabs.gml` asumen que existe un modelo/bloque "por defecto" real (`default_model = "human"`, `default_block = "grass_block"`, `macros.gml`), porque el banco de trabajo se arma en cada arranque, no bajo demanda — un `ds_map` vacío (válido pero sin esa clave) devuelve `undefined`, y acceder a `.default_state` de eso es lo que rompe. **Si en el futuro se toca este archivo de nuevo, tener presente que hay al menos estos 2 sitios con el mismo patrón** ("asume que `mc_assets.model_name_map`/`block_name_map` tienen `default_model`/`default_block`") — si aparece un tercero, es un patrón conocido, no una sorpresa.
+
+**Fix final:** un paquete de assets "placeholder" real y mínimo (`GmProject/datafiles/Data/Minecraft/placeholder.midata` + `placeholder.zip`), para que `minecraft_assets_load_startup_version()` tenga éxito de verdad — el pipeline de carga completo (`minecraft_assets_load.gml`, sin tocar) corre igual que con cualquier versión real, así que no hace falta ningún bypass en el arranque ni conocer de antemano cada sitio que asume datos cargados.
+- **100% generado desde cero, cero assets de Mojang** (pedido explícito del usuario, confirmado acá): el `.midata` es un JSON escrito a mano replicando solo el ESQUEMA del formato (nombres de claves: `characters`, `blocks`, `biomes`, `swatches`, etc. — confirmado leyendo el `1.20.2.midata` real solo para extraer su estructura, nunca sus valores), no un recorte de contenido real. Las 10 texturas del `.zip` son PNGs generados por código (`gen_placeholder_pngs.ps1`, usa `System.Drawing`) — franjas diagonales o color sólido gris neutro, sin ninguna textura de Minecraft.
+- **Reconocible como placeholder, verificado en el motor mismo, no solo "a simple vista":** `default_model`/`default_block` (`"human"`/`"grass_block"`) son claves de búsqueda FIJAS del motor — no se pueden cambiar sin romper la búsqueda — así que el `.midata` placeholder tiene que declarar un `character`/`block` con esos nombres exactos. Pero como `english.milanguage` (el único idioma empaquetado en Android) no tiene entradas de traducción para `"modelhuman"`/`"blockgrass_block"`, y `text_get()` (`GmProject/scripts/text_get/text_get.gml`) devuelve literalmente `<No text found for "modelhuman">` cuando una clave no existe en ningún idioma — el nombre que ve el usuario en la UI ya es, por sí solo, inconfundible con un nombre real de Minecraft. Sumado a las texturas grises/rayadas (no el patrón magenta/negro clásico de "textura faltante" de Minecraft/Mojang, deliberadamente distinto) y a que el modelo/bloque no tiene ningún archivo de geometría (`file: null`, campo omitido), el resultado visual es claramente vacío, no una imitación de contenido real.
+- **Transición cuando el usuario consigue una versión real:** `app.setting_minecraft_assets_version` es un valor persistido (`settings_load.gml`/`settings_startup.gml`). El primer arranque limpio en Android siempre intenta `"1.20.2"` primero (el default de fábrica, `minecraft_version`), falla, y cae a `"placeholder"` — y esa caída se GRABA como la versión activa (mismo comportamiento que desktop ya tenía para su propio fallback, no algo nuevo introducido acá). Si el usuario después copia un `.zip`+`.midata` reales a la carpeta `Minecraft/` de los datos de la app (ver B24) con otro nombre de versión, **no se cargan solos** — hay que ir al selector de versión de Minecraft en la configuración (`action_setting_minecraft_assets_version.gml`, ya existente, sin cambios) y elegir esa versión para que el próximo arranque la use en lugar del placeholder. Es la misma mecánica que desktop ya usa para cambiar de versión, no un flujo nuevo.
+- **Verificado en dispositivo real (instalación limpia):** el log del dispositivo (`log.txt`) muestra el pipeline completo corriendo sin errores — "Unzipping... Extracted 10/10 files", "Model textures: done", "Block textures... done", "Item textures... done", "Particle textures... done", "Loaded assets successfully" — y la app llega a la pantalla de bienvenida normal y al editor (banco de trabajo, panel de propiedades, línea de tiempo) sin ningún cartel de error.
+
+**Corrección importante a B23, encontrada de paso:** B23 y `UI_DEVIATIONS.md` decían que el camino principal era "importar su `.jar` de Minecraft" desde la app. Se grepeó todo `GmProject/scripts` y `CppProject` buscando manejo de `.jar` — **no existe ningún flujo de importación de `.jar` en el código**, ni en Android ni en desktop. El `.zip`+`.midata` de `Data/Minecraft/<version>/` es un paquete ya generado (por una herramienta externa al programa, en algún punto del proceso de build/distribución de Mine-imator) que el desktop simplemente trae precargado — no algo que el usuario arma tocando un botón "Importar .jar" dentro del programa. El camino real, hoy, es copiar manualmente un `.zip`+`.midata` ya generados a la carpeta `Minecraft/` de los datos de la app y cambiar la versión activa (ver punto de arriba); el código de carga (`minecraft_assets_load_startup_version.gml`) sólo busca esos dos archivos por nombre, sin importarle cómo llegaron ahí.
+
+**Pendiente, no resuelto en esta sesión:** con el placeholder, la app ya no crashea y el usuario puede trabajar (crear proyectos, usar la interfaz) sin ninguna versión real de Minecraft, aunque sin bloques/personajes reales hasta que consiga y copie una versión real. Sigue sin haber un flujo in-app para conseguir esa versión mientras B22 (HTTPS) bloquee la descarga desde `mineimator.com` — sigue siendo una limitación real de la definición de éxito de §16, ahora con una app que al menos abre y es usable en el estado intermedio.
+
+## B23: Android no trae el paquete de Minecraft precargado (1.20.2) — decisión deliberada, no bug (2026-09-10)
+
+**Estado: decisión tomada, con impacto real en §16 mientras B22 siga abierto.**
+
+**Contexto:** al arreglar B-sin-número (crash de instalación limpia por `legacy.midata` faltante, ver más abajo), se encontró que el desktop empaqueta `Data/Minecraft/1.20.2.zip` (3,5MB) como versión de Minecraft precargada por defecto. Se inspeccionó el contenido real del zip (no se asumió): **2.845 archivos PNG reales de Minecraft** (texturas de trims de armadura, más `assets/minecraft/textures/` con probablemente bloques/items) — no es metadata estructural, son texturas de Mojang. Esto es exactamente lo que `CLAUDE.md` §9.4 dice que no hay que empaquetar, y el permiso de David Andrei (§9.3) cubre su propio código, no las texturas de Mojang.
+
+**Decisión:** `Data/Minecraft/` queda excluido del recurso Qt embebido en Android (ver `CMakeLists.txt`, bloque `ANDROID_DATA_FILES`). El resto de `Data/` (fuentes, idiomas, splashes, legacy.midata, presets de render) sí se empaqueta — ver el resto de este documento y `data_directory_seed_android.gml`.
+
+**Impacto real en la definición de éxito (`CLAUDE.md` §16, "Importar assets de Minecraft desde un `.jar` que él provee"):** en Android, a diferencia de escritorio, el usuario NO tiene una versión de Minecraft lista para usar al abrir la app por primera vez. Le quedan dos caminos:
+1. Conseguir (por su cuenta, con alguna herramienta externa a partir de su `.jar` legítimo) un `.zip`+`.midata` ya generados y copiarlos manualmente a la carpeta `Minecraft/` de los datos de la app — funciona 100% local, sin depender de red. **Corrección (ver B25):** esto NO es un "importar mi .jar" interactivo dentro del programa — no existe ningún flujo así en el código, ni en Android ni en desktop. Es copiar archivos ya procesados a mano.
+2. Descargar una versión desde `mineimator.com/assets/` (el camino secundario que encontramos investigando B22) — **bloqueado hoy**, porque B22 (Qt-Android sin soporte OpenSSL) sigue sin resolverse.
+
+Mientras B22 esté abierto, el camino (2) no existe en la práctica, y el camino (1) no tiene ningún flujo dentro de la app que lo facilite — Android depende 100% de que el usuario copie manualmente los archivos correctos a la carpeta correcta. Esto es una diferencia funcional real contra escritorio (que arranca con 1.20.2 ya listo), no cosmética. Además, hasta el fix de B25, la ausencia total de una versión hacía que la app ni siquiera abriera (no era solo "sin bloques") — eso ya está resuelto.
+
+**No es una decisión reversible a la ligera:** revertirla (volver a empaquetar `Minecraft/`) requeriría antes resolver la pregunta legal de si esas 2.845 texturas están cubiertas por algún permiso de Mojang (no de David) — no evaluado, no es una decisión técnica.
+
+## B22: Qt-Android compilado sin OpenSSL — rompe HTTPS, afecta más que el chequeo de versión (2026-09-09) — **RESUELTO 2026-09-16**
+
+**Estado: RESUELTO y verificado en dispositivo real.** Se recompiló OpenSSL 3.0.21 para Android arm64 y Qt 5.15.19 con `-openssl-linked` (a pedido explícito del usuario, para destrabar el auto-update). `config.summary` ahora dice `OpenSSL: yes` / `Qt directly linked to OpenSSL: yes`. Verificado con tráfico HTTPS real en el Redmi 10C: tanto el chequeo de auto-update (`api.github.com`) como el chequeo de assets pre-existente (`mineimator.com`, antes silenciosamente roto) ahora completan la conexión (`"Using the latest assets"` en el log, y una respuesta HTTP real — 404, no un fallo de protocolo — de GitHub). El detalle completo del proceso de build (OpenSSL, reconfigurar Qt, bloqueos de Windows Smart App Control con los binarios host recién compilados) queda en el historial de la sesión, no repetido acá.
+
+**Texto original (histórico, ya no vigente):** diagnosticado con precisión, NO arreglado — decisión de cuándo arreglarlo pospuesta a pedido del usuario.
+
+**Causa real (no "faltan archivos .so" como se creía al principio):** `C:/Dev/Qt/5.15.19/build-android/config.summary` dice literalmente `OpenSSL: no` para el build de Qt-Android que usa este proyecto — el módulo Qt5Network para Android se compiló **sin ningún soporte de SSL**, no es que falte una librería en tiempo de ejecución. Arreglarlo de verdad requiere recompilar Qt para Android con `-openssl-linked` (u opción equivalente), el mismo costo que B16 (horas de build) — no alcanza con vendorizar `libssl.so`/`libcrypto.so`.
+
+**Qué usa HTTPS realmente (`grep -rn "http_get\(\|http_get_file\(" GmProject/`), y por qué NO es solo cosmético:**
+- `toasts_startup.gml:13` → `http_get(link_news)` — chequeo de noticias/versión al arrancar. Esto sí es cosmético.
+- `app_event_http.gml:63` y `window_draw_new_assets.gml:71` → `http_get_file(link_assets + new_assets_version + ".zip"/".midata", ...)`, con `link_assets = "https://www.mineimator.com/assets/"` (`macros.gml:89`) — **descarga paquetes de assets de Minecraft pre-convertidos, hosteados por Mine-imator mismo**, un camino de adquisición de assets alternativo al de `CLAUDE.md` §9.4.
+
+**Relación con §9.4/§16 (aclarada, no son lo mismo):** §9.4 ("no redistribuye, extrae de los `.jar` del usuario") sigue siendo el camino PRINCIPAL y sigue funcionando 100% offline/local, sin depender de este bug. El download de `mineimator.com/assets/` es un camino SEGUNDO, para quien no tiene o no quiere usar su propio `.jar` — no son los servidores de Mojang. Con B22 sin arreglar, ese segundo camino no funciona en Android; el primero (§9.4, el que define éxito en §16) no se ve afectado.
+
+**Decisión (2026-09-09):** no recompilar Qt todavía. Documentar con precisión y revisar cuándo se decida arreglar — dado que va a requerir recompilar Qt de cualquier manera, conviene agruparlo con cualquier otra flag de Qt que falte en vez de hacerlo dos veces.
+
+## B21: carga de bloques lenta en Android — RESUELTO, causa real era una búsqueda lineal, no I/O (2026-09-09)
+
+**Estado: RESUELTO y verificado en dispositivo real.** Fase 6 override explícito del usuario para investigar esto fuera de orden de fase — terminó siendo el fix de mayor impacto de toda la sesión.
+
+**Camino recorrido, con cada intento medido en dispositivo real (no supuesto):**
+
+1. **Throttle por-frame descartado.** Se subió `repeat(20)` (línea 382, bloques procesados por frame) a `repeat(100)` (5x): 98s → 97s, sin diferencia real. Revertido a `repeat(20)` — cambiar cuántos bloques se procesan por frame no cambia el trabajo total, solo cómo se reparte entre frames.
+2. **`file_exists_lib()` redundante, eliminado igual (pequeña ganancia, no la causa principal).** `block_load_state_file.gml` hacía un `QFile::exists()` antes de `json_load()`, que ya falla limpio solo. Eliminado — correcto mantenerlo (menos I/O real), pero midió 100s, sin mejora medible por sí solo.
+3. **Perfilado real con instrumentación temporal** (`log()`, no gateado por `dev_mode` como `debug_timer_*`) en `minecraft_assets_load.gml`/`block_load.gml`/`block_load_state_file.gml`/`block_load_model_file.gml`/`block_load_variant_model.gml` — 3 pasadas sucesivas, cada una aislando un nivel más:
+   - `statefile_ms` (todo lo que pasa por `block_load_state_file()`): 84,872ms de 89,037ms totales (95%).
+   - De eso, `jsonload_ms` (blockstate) + `modeljsonload_ms` (modelo) = solo 6,660ms (7.9%) — **el I/O y el parseo JSON, la hipótesis original, NO eran el costo real.**
+   - `rendermodel_ms` (`block_load_render_model()`, construcción de geometría/malla): **65,295ms — 73% del tiempo total de la etapa**, en 5,902 llamadas (~11ms c/u).
+4. **Causa raíz encontrada leyendo `block_load_render_model.gml`:** [`ds_list_find_index(mc_assets.block_texture_list, texname)`](GmProject/scripts/block_load_render_model/block_load_render_model.gml) — una **búsqueda lineal por string**, repetida hasta 6 veces (con distintos sufijos `" opaque"`/`" noalpha"`, más la lista de animados) **por cada cara renderizada** de cada elemento de cada variante de cada bloque. Contra una lista de cientos/miles de texturas de bloque de Minecraft, escaneada miles de veces, esto es el clásico patrón O(n×m) que un intérprete lento en un SoC móvil paga carísimo.
+
+**Fix:** dos mapas nombre→índice (`block_texture_index_map`, `block_texture_ani_index_map`, `minecraft_assets_event_create.gml`), poblados una sola vez justo después de copiar las listas (`minecraft_assets_load.gml`, listas estáticas después de ese punto — confirmado que ningún otro lugar del código las modifica). Los 6 `ds_list_find_index()` de `block_load_render_model.gml` pasan a ser lookups de mapa O(1), misma semántica "primera coincidencia, -1 si no está". Nota de transpilación: `slot = (is_undefined(map[?k]) ? -1 : map[?k])` no compila (C++ ambiguo entre `IntType`/`VarType` en el ternario) — se usó `if/else` en su lugar.
+
+**Resultado medido, mismo dispositivo, misma metodología (lanzamiento → "Loaded assets successfully" en `log.txt`):**
+
+| | Antes | Después |
+|---|---|---|
+| Carga total | ~98s | **~39s** |
+| Etapa "blocks" | 89,037ms | 26,456ms |
+| `rendermodel_ms` | 65,295ms | 7,815ms (-88%) |
+
+**Verificado sin regresión:** app instalada y probada en dispositivo real tras el fix — miniatura del proyecto (pasto, cielo, nubes) se ve normal, sin texturas rotas/faltantes. Toda la instrumentación temporal fue removida antes de este cierre (`grep -r "PROFILING TEMPORAL\|debug_profile" GmProject/` → sin resultados).
+
+**Pendiente, fuera de alcance de este fix:** el 21% restante de `statefile_ms` (I/O+parseo JSON + overhead de `with`/instancias) no se optimizó — es mucho más chico ahora y no se justifica seguir sin nueva medición. El `file_exists_lib()` de `block_load_model_file.gml` (línea 10, mismo patrón redundante que el ya eliminado en `block_load_state_file.gml`) tampoco se tocó — no estaba en el 73% confirmado, queda para una pasada futura si hiciera falta.
+
+## B20 (referencia cruzada, ver `CLAUDE.md` §8): el teclado virtual de Android no tiene forma de aparecer — investigado 2026-09-09, IMPLEMENTADO 2026-09-11
+
+**Estado: implementado y compila limpio (Android arm64-v8a); pendiente de verificación en dispositivo real.** Adelantado desde el paso 7 del plan de Fase 3 porque era la incógnita más grande y bloqueaba decisiones de pasos anteriores; completado ahora a pedido explícito del usuario de continuar Fase 3 "completa".
+
+**Implementación de las 3 piezas propuestas:**
+1. **Show/hide explícito**, disparado por un único punto central (no repartido en cada primitiva de texto): `textbox_isediting` (`app_update_keyboard.gml`) ya era la señal confiable de "hay algún textbox con foco ahora mismo", puesta en `true` cada frame por `textbox_draw.gml` — se le agregó un detector de flanco (`textbox_isediting_prev`) que llama a las nuevas `keyboard_virtual_show()`/`keyboard_virtual_hide()` (`util_cpp.gml`/`UtilFunc.cpp`, `CppSeparate`) exactamente una vez por transición. El bug de timing de Qt documentado en la investigación (`setFocus()` antes de que la ventana nativa exista → nunca se registra un `focusObject`) se ataca en dos puntos: `AppWindow::Maximize()` reafirma el foco de `KeyChecker` recién después de `showFullScreen()` (no en el constructor), y `keyboard_virtual_show()` lo reafirma de nuevo justo antes de cada `QGuiApplication::inputMethod()->show()`, por si algo se lo robó entre medio.
+2. **Posición real reportada**: `textbox_draw.gml` llama a `keyboard_field_set(x, y, w, h)` cada frame con el rect lógico del campo con foco — **no** vía una variable global de GML leída desde C++ como `gmlGlobal::algo`; un primer intento así falló en compilar (`no member named 'keyboard_field_x' in 'CppProject::gmlGlobal'`) porque `gmlGlobal` resultó ser un struct fijo y cerrado que CppGen genera solo para ~16 variables integradas del propio motor de GameMaker (`mouse_x`, `keyboard_string`, `current_time`, etc. — confirmado leyendo `GmlFunc.hpp:179-197` generado, no asumido), no un mecanismo genérico para exponer cualquier global personalizada. El valor viaja como parámetro de la función `CppSeparate` (mismo patrón ya probado que `interface_scale_set(factor)`), que lo guarda en miembros propios de `KeyChecker` (`fieldX/Y/W/H`, `AppWindow.hpp`); `KeyChecker::inputMethodQuery()` (antes heredado sin sobreescribir de `QLineEdit`) los devuelve para `Qt::ImCursorRectangle`/`Qt::ImInputItemClipRectangle`, convertidos a píxeles físicos con `App->scale` (mismo factor que ya usan `window_get_width()`/la posición del mouse) — no la geometría interna del `QLineEdit` oculto, que nunca coincidía con nada visible.
+3. **`NoEcho`/`ImHints`**: sin verificar todavía — pendiente de la primera prueba en dispositivo real, tal como decía la investigación original.
+
+Las 3 funciones nuevas (`keyboard_virtual_show`/`_hide`/`keyboard_field_set`) están genuinamente vacías fuera de Android (`#ifdef Q_OS_ANDROID`, no solo un gate del lado GML) — cero riesgo de que una laptop de escritorio con pantalla táctil dispare el teclado en pantalla de Windows como efecto secundario no buscado.
+
+**El hallazgo:** `KeyChecker` (`AppWindow.cpp:289-319`, un `QLineEdit` oculto con foco permanente desde el arranque) es el único mecanismo de captura de texto del proyecto, y fue diseñado exclusivamente para teclado físico de escritorio — traduce `QKeyEvent` reales a la variable `keyboard_string` que consume GML. El "foco" que GML usa para saber qué campo se está editando (`window_focus`, una variable de aplicación) es completamente independiente del foco real de Qt (`KeyChecker` nunca deja de tener el foco de Qt, sin importar qué campo GML esté activo). Ni GML ni C++ llaman nunca a `QGuiApplication::inputMethod()->show()` (confirmado por grep: cero resultados en todo el proyecto).
+
+**Causa confirmada, no solo "el widget está oculto":** se leyó el código fuente real de Qt 5.15.19 instalado en esta máquina (`qandroidinputcontext.cpp:985-1005`, la versión exacta que compila este proyecto) — `showInputPanel()` no chequea visibilidad de ningún widget en ningún punto, solo necesita un `focusObject()` de Qt válido. El bloqueo real es más específico: nadie invoca esa función, y el foco de Qt no se mueve nunca cuando el foco de GML sí lo hace.
+
+**Impacto:** ningún campo de texto táctil (`textfield`, `textfield_group`, el numérico embebido de `dragger`/`meter`, la búsqueda de `sortlist`) va a mostrar el teclado en pantalla en Android, tal como está el código.
+
+**Fix propuesto, no implementado** (3 piezas, ver `research/2026-09-09-fase3-virtual-keyboard.md` para el detalle): (1) disparar `inputMethod()->show()`/`->hide()` explícitamente cuando `window_focus` de GML cambie a/desde un campo de texto; (2) sobreescribir `KeyChecker::inputMethodQuery()` para reportar la posición real del campo GML en pantalla; (3) verificar si `QLineEdit::NoEcho` afecta el tipo de teclado que ofrece Android. Se implementa cuando Fase 3 llegue al paso de primitivas de texto.
+
+## B10 (referencia cruzada, ver `CLAUDE.md` §6.3/§8): arrastre de cámara con recentrado de cursor, roto bajo touch — DEUDA DE FASE 4, fix instrumental aplicado (2026-09-09)
+
+**Estado: NO resuelto. Lo que se aplicó es un parche mínimo para desbloquear la verificación visual de Fase 2, no una solución de input táctil.** No cerrar esta entrada como "bug arreglado" — el contrato de input de §6.3 (`mouse_x`/`mouse_y` indefinidos entre toques, B10) sigue sin decidirse, y eso es explícitamente Fase 4 (`CLAUDE.md` §12, "Interacción... lenguaje de gestos completo"), gate G1 pendiente.
+
+**Síntoma real, confirmado por el usuario en dispositivo (2026-09-09):** arrastrar el dedo para orbitar la cámara ("click y arrastrar" en el viewport, `view_update.gml:88`, `window_busy="viewrotatecamera"`) produce saltos erráticos ("se buguea"). Además, no hay forma de hacer zoom.
+
+**Causa raíz (confirmada leyendo el código, no supuesta):** [`camera_control_rotate.gml`](GmProject/scripts/camera_control_rotate/camera_control_rotate.gml) y [`camera_control_move.gml`](GmProject/scripts/camera_control_move/camera_control_move.gml) usan el truco de escritorio de "mouse look" infinito: cada frame leen `display_mouse_get_x/y()` (posición del cursor del SO) y lo fuerzan de vuelta a un punto fijo con `display_mouse_set(lockx, locky)`, para poder arrastrar sin que el cursor se salga de la ventana. En touch no existe un cursor que se pueda "recentrar" — Android reporta la posición REAL del dedo cada frame sin importar qué posición fuerce el código, así que el recentrado compite con el toque real cada frame → salto errático. No es un bug de un valor mal calculado, es un mecanismo de escritorio (cursor infinito) que no tiene equivalente conceptual en touch.
+
+**Zoom:** no es parte de este bug — está atado únicamente a `mouse_wheel_up/down()` (`app_update_mouse.gml:22`), sin ningún gesto de pellizco implementado. Gap de funcionalidad esperado (Fase 4), no un error.
+
+**Fix instrumental aplicado (2026-09-09), explícitamente NO es la solución elegida:**
+- `enums.gml`: se reagregó `e_platform.ANDROID = 3` (había sido revertido en una ronda anterior de esta misma sesión).
+- `UtilFunc.cpp`, `platform_get()`: se reagregó la rama `Q_OS_ANDROID` (mismo motivo).
+- `camera_control_rotate.gml` / `camera_control_move.gml`: en la rama Android, se saltea `display_mouse_set()` y se usa el delta crudo entre frames (`mouse_dx`/`mouse_dy`, ya calculado en `app_update_mouse.gml` y ya usado con el mismo patrón en `view_control_camera.gml` para los gizmos) en vez de la diferencia contra un punto recentrado. Arregla el arrastre-para-orbitar. **No agrega zoom táctil, no agrega pan de dos dedos, no resuelve el contrato de `mouse_x`/`mouse_y` entre toques de B10 en general** — sigue pendiente para cuando Fase 4 diseñe el lenguaje de gestos completo con el humano en un gate G1, no como consecuencia de este parche.
+
+**Por qué queda como deuda y no como "B10 resuelto":** este fix es un parche puntual a dos funciones, elegido por conveniencia para destrabar una verificación de Fase 2 — no pasó por el gate G1 que le corresponde a "modelo de input táctil" (`CLAUDE.md` §6.3). Cuando Fase 4 arranque, este código debe revisarse como candidato a reemplazo, no asumirse como la base ya decidida.
+
+**Extendido a más primitivas (2026-09-09, Fase 3):** el mismo patrón (`window_mouse_set()` → `display_mouse_set()`, recentrar cada frame) apareció en 4 lugares más, no solo cámara — confirmado por reporte real del usuario ("arrastro un `dragger` y no cambia nada, ni se mueve"): `draw_dragger.gml`, `draw_textfield_group.gml`, `draw_dragger_sky.gml` (los tres calculaban el cambio de valor como `mouse_x - mouse_click_x`, el desplazamiento TOTAL desde el click, sumado cada frame sin límite — al no recentrarse de verdad en touch, ese total no baja nunca y el valor se dispara a un extremo casi al instante en vez de cambiar suavemente) y `app_mouse_wrap.gml` (usado por `camera_control_pan.gml` y `view_update_surface.gml` para "envolver" el cursor en los bordes del viewport — en touch no hay nada que envolver). Mismo fix instrumental: rama Android usa `mouse_dx` (delta real entre frames) en vez de recentrar, `app_mouse_wrap` es no-op directo en Android. Verificado funcionando en dispositivo real tras el fix (arrastre de posición/rotación/escala responde bien). Sigue siendo deuda de Fase 4, no una solución de input táctil — mismo razonamiento que arriba.
+
+**Zoom y pan de dos dedos implementados (2026-09-11, arranque de Fase 4) — cierra la mitad de B10 que seguía sin ningún camino táctil, la otra mitad (arrastre de un dedo) sigue siendo el parche instrumental de arriba, sin cambios.** Trampa 1 (§6.3, interceptar `QTouchEvent` en vez de dejar que Qt sintetice mouse) implementada por primera vez, mínima y aditiva a propósito: `AppWindow::event()` ahora maneja `QTouchEvent` **solo cuando hay 2 o más puntos de contacto** — con 0 o 1 dedo, el evento no se acepta y sigue cayendo en la síntesis de mouse de Qt de siempre (la misma que ya usa el arrastre de un dedo, verificado funcionando, cero riesgo de regresión ahí). Con 2 dedos, se mide la distancia entre los dos primeros puntos (pellizco) y su punto medio (paneo), acumulando el delta por cuadro (`AppWindow.hpp`: `touchCount`/`touchPinchDelta`/`touchPanDx`/`touchPanDy`, drenados una vez por frame en `AppHandler.cpp` igual que ya se hace con `mouseWheel`) y expuestos a GML con 4 funciones nuevas (`touch_count()`, `touch_pinch_delta()`, `touch_pan_dx/dy()`, patrón `CppSeparate` ya probado en `util_cpp.gml`). Del lado GML (`view_update.gml`), el segundo dedo dispara `window_busy="viewpancamera"` directamente (reemplaza el Shift+arrastre de escritorio, sin equivalente confiable en Android sin teclado físico) y `touch_pinch_delta()` se suma a `mouse_wheel` antes de pasar por la misma fórmula de zoom de siempre — nada de esto toca el camino de un dedo ya verificado. **Limitaciones documentadas, no ocultas:** (1) solo detecta el caso común de que ambos dedos lleguen juntos mientras el estado sigue en `"viewclick"` — agregar un segundo dedo después de que la rotación de un dedo ya arrancó no lo intercepta todavía; (2) la sensibilidad del pellizco (`/100` antes de la fórmula de zoom) es un punto de partida razonado, no un valor afinado en dispositivo real; (3) compila limpio pero **nunca se probó en un dispositivo real** al momento de escribir esto — es la primera vez que este proyecto intercepta `QTouchEvent` en absoluto. El contrato general de `mouse_x`/`mouse_y` indefinidos entre toques (la otra mitad de Trampa 2) sigue sin resolverse — este cambio no lo necesitó porque pellizco/paneo de dos dedos se miden con sus propias coordenadas de `QTouchEvent`, no con `mouse_x`/`mouse_y`.
+
+## B19 (referencia cruzada, ver `CLAUDE.md` §8): calificadores de precisión GLSL ES — RESUELTO Y VERIFICADO EN DISPOSITIVO (2026-09-09)
+
+Agregado `precision highp float;`/`precision highp int;` a los defines de Android (`ShaderLoadOpenGL.cpp`). Verificado en el Adreno 610 real tras reconectar el dispositivo: los 47 shaders de `shader_startup.gml` + los 3 on-demand (`world_checker`/`world_preview`/`world_box`) compilan limpio, cero errores nuevos, cero regresión — exactamente lo esperado, ya que el driver asumía `highp` de hecho. Detalle completo en `PATCHES.md`.
+
+## KI-3: 3 de los 6 shaders exclusivos de C++ no compilaban en Android — RESUELTO (2026-09-09, Fase 2)
+
+**Estado: RESUELTO y verificado en dispositivo real.**
+
+**Síntoma:** `world_checker`, `world_preview` y `world_box` (3 de los 6 shaders que solo existen en `CppProject/Asset/Shaders/`, sin contraparte en `GmProject` — usados por el importador/constructor de mundos Minecraft, no por `shader_startup.gml`) fallaban a compilar en Android, confirmado en `log.txt` del dispositivo real:
+
+- `world_checker.fsh`: `ERROR: '=' : cannot convert from 'const int' to 'float'`
+- `world_preview.vsh`: 3 errores `wrong operand types` en `+`/`/` entre `float` e `int`
+- `world_box.vsh`: 3 errores `wrong operand types` en `>=` entre `float` e `int`
+
+Ninguno de los tres aparece en la lista de 49 shaders de `shader_startup.gml` que Fase 1 ya había verificado — por eso el chequeo de compilación de Fase 1 nunca los detectó. Se cargan on-demand (aparecieron ~100s después del arranque, sin que nadie tocara nada, en la corrida de Fase 2), probablemente al inicializar el sistema de construcción de mundo para el proyecto default.
+
+**Causa raíz:** GLSL ES 3.00 es estricto con mezclar `int`/`float` en la misma expresión (`float + int`, `float / int`, `float >= int`) — desktop GLSL (`#version 150`) hace la conversión implícita sin quejarse. Mismo patrón de bug que ya apareció con los inicializadores globales no-const (ver `research/2026-09-08-fase1-first-device-run.md`, hallazgo 6) — código nunca antes compilado contra un compilador ES real.
+
+**Fix:** 3 archivos, cambio mínimo en cada uno — agregar `.0`/`float()` en los literales y conversiones que lo necesitaban:
+- [`CppProject/Asset/Shaders/world_checker.fsh`](CppProject/Asset/Shaders/world_checker.fsh) — `12` → `12.0`
+- [`CppProject/Asset/Shaders/world_preview.vsh`](CppProject/Asset/Shaders/world_preview.vsh) — `CHUNK_HEIGHT_MIN` a `-64.0`, y `/ PREVIEW_TEXTURE_SIZE` → `/ float(PREVIEW_TEXTURE_SIZE)` (el define se usa también como entero en un `%`, así que no se le pudo cambiar el tipo — el cast va en el sitio de uso)
+- [`CppProject/Asset/Shaders/world_box.vsh`](CppProject/Asset/Shaders/world_box.vsh) — `>= 1` → `>= 1.0` (×3)
+
+Verificado: recompilado, reinstalado, y confirmado con el log real del dispositivo que ya no aparece ninguna mención de estos 3 shaders (antes fallaban siempre en el mismo punto de la carga; ahora, con la app corriendo bien más allá de ese punto, cero errores). Es un fix upstream (afecta al mismo bug en cualquier plataforma que use un compilador GLSL ES estricto, no solo Android) — anotado en `PATCHES.md`.
+
+**Incógnita sin resolver:** el log también mostraba un WARNING (`extension 'GL_ARB_fragment_coord_conventions' is not supported`) junto al error de `world_checker` — no se encontró ese string en ningún lugar del repo, así que no se identificó su origen. Era un WARNING, no lo que bloqueaba la compilación (el `ERROR` de conversión de tipo sí lo era) — no bloqueó el fix, pero queda sin explicar.
+
+## KI-1: Superficie de render desalineada con `App->scale` — diagnosticado y con fix verificado, REVERTIDO a pedido del usuario (2026-09-09) — **RE-APLICADO 2026-09-16, luego REVERTIDO DE NUEVO el mismo día (regresión real confirmada)**
+
+**Estado: REVERTIDO otra vez.** El re-aplicado de esta sesión causó una regresión visible confirmada por captura real en el dispositivo: el popup "Nuevo proyecto" y la pantalla de carga de Android aparecían recortados/reescalados, desbordando el borde de la pantalla. Causa probable: varios parches de escala específicos de Android (B27 segunda pasada, correcciones de `bench_draw.gml`/`window_draw_startup.gml`, y todo el rediseño de la pantalla de carga de Android de KI-2) se hicieron DESPUÉS del revert original de 2026-09-09 y se ajustaron/verificaron contra la AUSENCIA de este fix — reaplicarlo sin volver a probar contra todo lo construido desde entonces fue prematuro. Vuelto a `BeginUse(win->size())` (el comportamiento conocido, aunque imperfecto). Si se retoma esto en el futuro, necesita verificarse contra la UI de Android completa actual, no solo contra la reproducción original de la pantalla de carga de 2026-09-09.
+
+**Texto de la re-aplicación (histórico, ya no vigente):** `AppHandler.cpp` (hoy línea 366, era `:343` cuando se escribió el diagnóstico original) seguía sin la división por `scale` — confirmado leyendo el código actual antes de tocar nada, no asumido. Vuelto a aplicar exactamente el fix ya validado en 2026-09-09 (`BeginUse(win->size() / scale)`), sin cambios al resto del razonamiento de abajo, que sigue siendo la fuente de verdad del diagnóstico. Motivo de retomarlo ahora: sospecha concreta de que este mismo desajuste (no solo el síntoma original de la pantalla de carga) es un contribuyente a B31 (letras de mala calidad, reportado en un segundo dispositivo Android con otra densidad/`scale` efectivo) — sin verificar todavía en dispositivo real, pendiente de build + prueba.
+
+**Historial (texto original del hallazgo, 2026-09-09, sin reescribir):** fix verificado y funcional, pero REVERTIDO. Resultó ser un bug preexistente de escritorio (feature "Interface Scale" 200%/300%), no específico de Android — ver `PATCHES.md`. Decisión de arquitectura en gate G1 (`CLAUDE.md` §17) sigue en pie. El código del fix (`AppHandler.cpp:343`) se deshizo junto con el resto de los cambios de hoy a pedido explícito del usuario ("Fin, deshace todo hasta la primera build exitosa, como antes") — backup en `_backup_2026-09-09_second_revert/`. El diagnóstico, los números medidos y la decisión de arquitectura de abajo siguen siendo válidos para cuando se retome este trabajo; lo que faltaba era volver a aplicar el cambio de código — ya hecho.
+
+**Síntoma:** en la pantalla de carga (`window_draw_load_assets.gml`), la caja de 740×450 aparece desplazada/recortada, con franjas de fondo asimétricas a los lados (más ancha de un lado que del otro), y la barra de progreso verde no se ve donde debería (solo se ve, a veces, el track gris de fondo).
+
+**Causa raíz confirmada (lectura de código, dispositivo real: Xiaomi/Redmi/POCO, 220333QL, horizontal, densidad 2.0):**
+
+Doble aplicación de `App->scale` entre tres puntos que deberían estar en el mismo sistema de coordenadas y no lo están:
+
+1. [`AppHandler.cpp:343`](CppProject/AppHandler.cpp#L343) — `GFX->surface->BeginUse(win->size())` arma la superficie interna de render al tamaño REAL de la ventana en píxeles físicos (confirmado en dispositivo: 1650×720).
+2. [`GLWidget.cpp`](CppProject/Render/GLWidget.cpp), `paintGL()` — `draw_surface_ext(GFX->surface->id, 0, 0, App->scale, App->scale, ...)` vuelve a escalar esa superficie (que YA está a resolución real) por `App->scale` (2 en este dispositivo) al componerla en pantalla.
+3. [`Gml/WindowFunc.cpp:69,74`](CppProject/Gml/WindowFunc.cpp#L69) — `window_get_width()`/`window_get_height()` (lo que usa el GML del loading screen para centrar la caja de 740×450) devuelven `AppWin->size() / App->scale` = 825×360, la MITAD del tamaño real de la superficie sobre la que en realidad se dibuja.
+
+Resultado: el GML calcula `xoff`/`yoff` asumiendo un lienzo de 825×360, pero las coordenadas resultantes se dibujan sobre una superficie de 1650×720 (el doble), y esa superficie se vuelve a agrandar ×2 al componerse. En escritorio esto nunca se manifiesta porque `App->scale` es casi siempre 1 (monitores estándar) — es el mismo patrón de "código nunca ejercitado con scale≠1" que ya apareció con el filtro de textura (ver `UI_DEVIATIONS.md`).
+
+**Datos de diagnóstico reales (log del dispositivo, `Q_OS_ANDROID`, horizontal, 9 frames estables tras el primer resize transitorio):**
+
+| Medición | Valor |
+|---|---|
+| `resizeGL(w,h)` | 1650, 720 |
+| `AppWin.size()` / `nativeWindow.size()` / `screen.size()` | 1650×720 (todos idénticos) |
+| `QApplication::desktop()->devicePixelRatio()` | 1 |
+| `QScreen::devicePixelRatio()` | 1 |
+| `QWindow::devicePixelRatio()` | 1 |
+| `App->scale` | 2 |
+| `glViewport` solicitado vs `glGetIntegerv(GL_VIEWPORT)` real | 1650×720 en ambos — coinciden, el viewport en sí NO es el problema |
+
+`glViewport` está correcto (usa `devicePixelRatio()`, que es 1 en este build por `Qt::AA_DisableHighDpiScaling`, y coincide exactamente con el tamaño real de pantalla). El bug está un paso antes, en el tamaño de la superficie interna vs. el sistema de coordenadas que usa el GML — no es un problema de `glViewport` ni de `devicePixelRatio()` de Qt.
+
+**Relación entre los dos síntomas:** confirmada — la barra de progreso ausente/mal ubicada es CONSECUENCIA del mismo desajuste de escala (punto 1), no un bug de renderizado separado. `GL_CHECK_ERROR()` está activo en este build (`DEBUG_MODE=1`) y no reportó ningún error de OpenGL durante la carga — descarta que el draw call de la barra falle a nivel GL.
+
+**Fix aplicado y verificado (2026-09-09):** `GFX->surface->BeginUse(win->size() / scale)` en `AppHandler.cpp:343`. Verificado con logging temporal (ya removido) en ambas plataformas:
+
+| Escenario | `win.size()` | `App->scale` | `surface.size` antes del fix | `surface.size` después del fix | `window_get_width/height()` |
+|---|---|---|---|---|---|
+| Escritorio, scale=1 (default) | 740×450 | 1 | 740×450 | 740×450 (sin cambio, no-op confirmado) | 740×450 |
+| Escritorio, scale=2 (forzado vía `settings.midata`) | 1480×900 | 2 | 1480×900 (❌ no coincidía) | 740×450 (✓ coincide) | 740×450 |
+| Android real, scale=2 | 1650×720 | 2 | 1650×720 (❌ no coincidía) | 825×360 (✓ coincide) | 825×360 |
+
+Instrumentación temporal removida de `GLWidget.cpp` y `AppHandler.cpp` una vez confirmado.
+
+**Importante — esto NO cierra todo el síntoma visual original.** Al reinstalar en el dispositivo real con el fix, la caja de carga se ve consistente con las coordenadas correctas, pero sigue recortada/con aspecto de "zoom" porque la caja fija de 740×450 (diseñada para un lienzo de escritorio) sigue siendo más alta (450) que el lienzo lógico disponible en este teléfono en horizontal (360, ver arriba) — un problema DISTINTO, de diseño de esa pantalla en particular, no de la arquitectura de escalado. Es el mismo tema ya identificado en la conversación (pantalla de carga propia para mobile) — pendiente, no cerrado por este fix.
+
+## KI-2: Caja de la pantalla de carga (740×450) más alta que el lienzo lógico disponible en teléfonos (abierto, 2026-09-09)
+
+**Síntoma:** incluso con KI-1 resuelto, en horizontal en el dispositivo de referencia (Xiaomi/Redmi/POCO, 220333QL) la caja de 740×450 de `window_draw_load_assets.gml` se ve recortada arriba y abajo (falta la barra de progreso, que vive en los últimos 8px de la caja).
+
+**Causa:** `window_get_height()` en este dispositivo, en horizontal, es 360 (real 720 / `App->scale` 2) — menor que los 450 que mide la caja. `yoff = floor(360/2 - 450/2) = -45`: la caja se centra con un origen negativo, sobresaliendo 45 unidades lógicas tanto arriba como abajo del lienzo visible. La barra de progreso, en `yoff + 450 - 8 = 397`, queda fuera del rango visible `[0, 360)`.
+
+**No es un bug de escalado — es un límite físico real:** un teléfono en horizontal, incluso corrigiendo densidad correctamente, tiene menos altura lógica disponible que un monitor de escritorio. `CLAUDE.md` §13.3 aplica directo: "si no podés justificar un cambio con 'es físicamente imposible mantenerlo igual en una pantalla táctil de X pulgadas', no lo cambies" — acá sí hay justificación medida.
+
+**Estado:** abierto, no arreglado. Alternativas discutidas con el usuario (no decididas todavía): (a) hacer responsivo el tamaño de la caja en `window_draw_load_assets.gml` en vez de fijo en 740×450, sin gate ni cambio de contrato; (b) diseño de pantalla de carga propio para Android vía el mecanismo `CppOnly`/`CppSeparate` ya usado en el proyecto (71 archivos), dejando el GML de escritorio intacto.
+
+**Superado (2026-09-12):** se optó por la opción (b) — `window_draw_load_assets.gml` tiene ahora una rama completa `platform_get() == e_platform.ANDROID` con un diseño propio (panel diagonal, logo, créditos, progreso), totalmente independiente de la caja fija de 740×450, que sigue existiendo sin cambios para escritorio más abajo en el mismo archivo. Verificado en dispositivo real, múltiples iteraciones de layout con el usuario. Esta entrada queda como registro histórico del diagnóstico, no como estado actual.
+
+## KI-4: Gizmos y timeline táctiles (Fase 4) — implementados sin verificación en dispositivo (2026-09-15)
+
+**Estado: RESUELTO y verificado en dispositivo real (2026-09-15, misma sesión, más tarde).**
+
+**Contexto:** trabajo pedido explícitamente por el usuario ("haz fase cuatro completa") en una sesión sin acceso al teléfono. Detalle completo del inventario y la implementación: `research/2026-09-15-fase4-timeline-gizmos-inventory.md` y `research/2026-09-15-fase4-gizmos-timeline-implementation.md`.
+
+**Qué se hizo:**
+1. **Gizmos de manipulación 3D** (`view_control_move_axis/move_plane/move_pan/scale_axis/scale_plane/scale_all/rotate_axis.gml`) — el picking de los 5 tipos de gizmo (mover, rotar, escalar, target de cámara, bend) dependía de `view.control_mouseon_last`, un valor escrito el frame ANTERIOR al click que lo usa para decidir si agarra el control. Funciona bien con mouse (cursor continuo) pero es un touch trap real para un tap (posición+press casi simultáneos). Arreglado de forma aditiva: un chequeo `||` extra, gateado a Android, reutiliza en cada archivo las coordenadas 2D que la función ya calculaba para dibujarse ese mismo frame, evaluando el pick en el frame del press en vez de depender del anterior. `view_control_rotate_axis.gml` usa una aproximación (distancia-al-anillo) en vez de una réplica exacta, porque su geometría se calcula en un loop posterior al click-check — documentado como aproximación, no exacto.
+2. **Timeline** (`tab_timeline.gml`) — agregado pellizco-zoom (reutiliza `touch_pinch_delta()`, ya usado por la cámara) y pan de 2 dedos (`touch_pan_dx()`/`touch_pan_dy()`, ya implementados en C++ desde el arranque de Fase 4 pero sin ningún uso real en GML hasta ahora), como equivalentes de `Ctrl+rueda` y arrastre con botón central.
+
+**Verificación real hasta ahora:** solo compilación. `cmake --build . --target CppGen` (limpio, sin warnings), confirmado con `grep` que el código Android nuevo aparece tal cual en `CppProject/Generated/` (no solo que CppGen no tiró error), `cmake --build .` nativo (exit 0) y `cmake --build . --target apk` (exit 0, sin Trampa T4). **Cero verificación en pantalla real** — no se probó ni un solo tap en un dispositivo físico.
+
+**Riesgo concreto sin confirmar:** el fix de los gizmos asume que `mouse_x`/`mouse_y` (crudos) ya reflejan la posición del tap en el mismo frame en que `mouse_left_pressed` se vuelve verdadero — una asunción razonable (el evento de press trae su propia posición) pero nunca antes verificada contra la síntesis real de Qt en este proyecto para este caso específico.
+
+**Qué probar primero apenas haya dispositivo disponible:** tocar y arrastrar cada uno de los 5 tipos de gizmo (mover, rotar, escalar, pan de cámara vía su target, bend) y confirmar que el primer tap agarra el control esperado — no uno vecino, no ninguno. Después: pellizco-zoom y pan de 2 dedos en el timeline.
+
+**Estado:** abierto — implementado y compilando, pendiente de la primera prueba real.
+
+**Actualización, mismo día (2026-09-15, segunda pasada):** a pedido explícito del usuario ("puedes resolver eso de momento?") sobre los 3 puntos menores que quedaban documentados como deuda:
+
+1. **La aproximación del anillo de `view_control_rotate_axis.gml` se reemplazó por un pick exacto** — ya no es una aproximación por distancia-al-anillo, ahora duplica el mismo loop de 64 segmentos (con la misma oclusión vía `control_test_point`) que usa el dibujo real, corrido temprano y solo para picking (sin dibujar), antes del chequeo de click. Sigue sin verificarse en dispositivo, pero ya no es una aproximación conocida — es una réplica exacta de la lógica real.
+2. **El límite de la cámara ("los dos dedos tienen que llegar juntos")** — cerrado. `view_update.gml`, dentro del bloque `window_busy = "viewrotatecamera"`, ahora detecta si aparece un segundo dedo DESPUÉS de que la rotación ya arrancó y pasa a `window_busy = "viewpancamera"` en el mismo frame (el bloque de pan, inmediatamente después en el mismo archivo, vuelve a chequear `window_busy` fresco y arranca el pan sin esperar un frame).
+3. **Trampa 2 (§6.3, `mouse_x`/`mouse_y` entre toques)** — investigada y caracterizada con evidencia de código real (`AppWindow.cpp`→`AppHandler.cpp`→GML): los valores NO quedan indefinidos, quedan congelados en la última posición tocada — un default benigno para la mayoría de los 205 call sites. Cerrado el gate genérico (no hacía falta una política nueva), documentado en `CLAUDE.md` §6.3. El riesgo real (código que depende de hover fresco entre frames) sigue auditándose caso por caso, como ya se hizo acá con los gizmos.
+
+Los 3 son compilación-verificados (mismo ciclo CppGen+build nativo+APK que el resto de esta entrada), **ninguno probado en dispositivo real todavía** — sigue siendo la misma prioridad #1 de arriba.
+
+**Actualización final, mismo día — verificado en dispositivo real:** usuario conectó el Redmi 10C por WiFi ADB (depuración inalámbrica). MIUI sigue bloqueando `adb shell input` (`INJECT_EVENTS`), así que la verificación fue interacción manual del usuario + capturas/logs de este lado. **Confirmado funcionando:** los 5 gizmos, pellizco-zoom y pan de 2 dedos del timeline, panel dividido "Cámara activa" (con su propio joystick, ver más abajo), vuelo con cámara real. Único log de errores revisado tras cada instalación: cero `FATAL EXCEPTION`/`AndroidRuntime` en ninguna de las rondas.
+
+De paso, en la misma ronda de pruebas reales aparecieron y se arreglaron 3 bugs no relacionados con el picking/gestos original de esta entrada, sino con UI alrededor: (1) barra de atajos inferior con hints de mouse/teclado en vez de gestos táctiles — corregido en `shortcut_bar_update.gml`; (2) joystick virtual anclado solo a `view_main`, ausente en el panel dividido y al editar una cámara real — convertido a variables por-vista (`view.joystick_screen_x/y/radius`) y extendido a replicar la rama de cámara real de `camera_control_move.gml`; (3) popup del workbench con un botón "Escalar" (de la nueva barra de herramientas) superpuesto, y su columna de nombres/búsqueda desproporcionadamente angosta — ambos corregidos (`view_toolbar_draw_touch.gml` se apaga durante el popup; `bench_draw.gml` ancho base subido de 534 a 660 en Android). Detalle completo en `STATUS.md`, sesión 2026-09-15, y `UI_DEVIATIONS.md`.
+
+Con esto, Fase 4 (`CLAUDE.md` §12) queda cerrada.

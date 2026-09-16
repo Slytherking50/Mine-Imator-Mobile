@@ -11,7 +11,7 @@ function tab_properties_render()
 		text = filename_name(project_render_settings)
 	
 	tab_control_menu()
-	draw_button_menu("projectrendersettings", e_menu.LIST, dx, dy, dw, 24, project_render_settings, text, action_project_render_settings)
+	draw_button_menu("projectrendersettings", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_settings, text, action_project_render_settings)
 	tab_next()
 	
 	if (project_render_settings != "")
@@ -63,15 +63,15 @@ function tab_properties_render()
 		tab_collapse_start()
 		
 		tab_control_menu()
-		draw_button_menu("rendershadowssunbuffersize", e_menu.LIST, dx, dy, dw, 24, project_render_shadows_sun_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_sun_buffer_size)) + " (" + string(project_render_shadows_sun_buffer_size) + "x" + string(project_render_shadows_sun_buffer_size) + ")", action_project_render_shadows_sun_buffer_size)
+		draw_button_menu("rendershadowssunbuffersize", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_shadows_sun_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_sun_buffer_size)) + " (" + string(project_render_shadows_sun_buffer_size) + "x" + string(project_render_shadows_sun_buffer_size) + ")", action_project_render_shadows_sun_buffer_size)
 		tab_next()
 		
 		tab_control_menu()
-		draw_button_menu("rendershadowsspotbuffersize", e_menu.LIST, dx, dy, dw, 24, project_render_shadows_spot_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_spot_buffer_size)) + " (" + string(project_render_shadows_spot_buffer_size) + "x" + string(project_render_shadows_spot_buffer_size) + ")", action_project_render_shadows_spot_buffer_size)
+		draw_button_menu("rendershadowsspotbuffersize", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_shadows_spot_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_spot_buffer_size)) + " (" + string(project_render_shadows_spot_buffer_size) + "x" + string(project_render_shadows_spot_buffer_size) + ")", action_project_render_shadows_spot_buffer_size)
 		tab_next()
 		
 		tab_control_menu()
-		draw_button_menu("rendershadowspointbuffersize", e_menu.LIST, dx, dy, dw, 24, project_render_shadows_point_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_point_buffer_size)) + " (" + string(project_render_shadows_point_buffer_size) + "x" + string(project_render_shadows_point_buffer_size) + ")", action_project_render_shadows_point_buffer_size)
+		draw_button_menu("rendershadowspointbuffersize", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_shadows_point_buffer_size, text_get("rendershadowsbuffersize" + string(project_render_shadows_point_buffer_size)) + " (" + string(project_render_shadows_point_buffer_size) + "x" + string(project_render_shadows_point_buffer_size) + ")", action_project_render_shadows_point_buffer_size)
 		tab_next()
 		
 		tab_control_switch()
@@ -249,7 +249,7 @@ function tab_properties_render()
 			text = text_get("rendertonemappernone")
 		
 		tab_control_menu()
-		draw_button_menu("rendertonemapper", e_menu.LIST, dx, dy, dw, 24, project_render_tonemapper, text, action_project_render_tonemapper)
+		draw_button_menu("rendertonemapper", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_tonemapper, text, action_project_render_tonemapper)
 		tab_next()
 		
 		// Exposure
@@ -332,7 +332,7 @@ function tab_properties_render()
 	// Alpha mode
 	text = (project_render_alpha_mode = e_alpha_mode.BLEND ? text_get("renderalphamodeblend") : text_get("renderalphamodehashed"));
 	tab_control_menu()
-	draw_button_menu("renderalphamode", e_menu.LIST, dx, dy, dw, 24, project_render_alpha_mode, text, action_project_render_alpha_mode)
+	draw_button_menu("renderalphamode", e_menu.LIST, dx, dy, dw, ui_large_height, project_render_alpha_mode, text, action_project_render_alpha_mode)
 	tab_next()
 	
 	// Material maps

@@ -84,7 +84,7 @@ function tab_properties_background()
 			{
 				// Image type
 				tab_control_menu()
-				draw_button_menu("backgroundimagetype", e_menu.LIST, dx, dy, dw, 24, background_image_type, text_get("backgroundimagetype" + background_image_type), action_background_image_type)
+				draw_button_menu("backgroundimagetype", e_menu.LIST, dx, dy, dw, ui_large_height, background_image_type, text_get("backgroundimagetype" + background_image_type), action_background_image_type)
 				tab_next()
 				
 				// Background stretch
@@ -290,7 +290,7 @@ function tab_properties_background()
 	
 	// Biome
 	tab_control_menu()
-	draw_button_menu("backgroundbiome", e_menu.BIOME, dx, dy, dw, 24, background_biome, minecraft_asset_get_name("biome", background_biome), action_background_biome)
+	draw_button_menu("backgroundbiome", e_menu.BIOME, dx, dy, dw, ui_large_height, background_biome, minecraft_asset_get_name("biome", background_biome), action_background_biome)
 	tab_next()
 	
 	// Biome colors

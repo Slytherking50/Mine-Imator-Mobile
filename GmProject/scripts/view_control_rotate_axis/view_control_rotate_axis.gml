@@ -23,7 +23,52 @@ function view_control_rotate_axis(view, control, vid, color, mat, len)
 	facevec = vec3_normalize(vec3_mul_matrix(vec3(0, 0, 1), mat))
 	camvec = vec3_normalize(point3D_sub(cam_from, pos3D))
 	anglevis = abs(vec3_dot(facevec, camvec))
-	
+
+	// Android exact pick (Fase 4) - see view_control_move_axis.gml for the general reasoning.
+	// This gizmo is a ring drawn as 64 line segments in a loop FURTHER DOWN in this same
+	// function (after the click-check block below) - unlike the other control_* files,
+	// there's no single pre-computed shape to reuse cheaply. Upgraded from an earlier
+	// ring-distance approximation (2026-09-15, first pass) to an exact duplicate of that
+	// same loop - including the same "hidden behind the sphere" occlusion check via
+	// control_test_point - run early, pick-only (no drawing), so its result is ready before
+	// the click-check needs it. One extra projection pass per frame on Android only; this
+	// function isn't a hot path (a handful of gizmo draws per frame, not per-object).
+	var androidringmouseon = false;
+	if (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon)
+	{
+		var pks3D, pks2D, pke3D, pke2D, pkdis;
+		pks3D = point3D_mul_matrix(point3D(cos(0) * len, sin(0) * len, 0), mat)
+		pks2D = view_shape_project(pks3D)
+
+		if (!point3D_project_error)
+		{
+			pkdis = lerp(0.001, .75, percent(point3D_distance(pos3D, cam_from), 0, 100))
+
+			for (var pk = 0; pk <= 1; pk += 1/detail)
+			{
+				pke3D = point3D_mul_matrix(point3D(cos(pi * 2 * pk) * len, sin(pi * 2 * pk) * len, 0), mat)
+				pke2D = view_shape_project(pke3D)
+
+				if (point3D_project_error)
+				{
+					pks3D = pke3D
+					pks2D = pke2D
+					continue
+				}
+
+				if (!control_test_point(pks3D, (vid - e_value.BEND_ANGLE_X) > Z ? tl_edit.world_pos_rotate : tl_edit.world_pos, pkdis * anglevis)
+					&& pk > 0 && point_line_distance(pks2D[X], pks2D[Y], pke2D[X], pke2D[Y], mouse_x - content_x, mouse_y - content_y) < view_3d_control_width / 2)
+				{
+					androidringmouseon = true
+					break
+				}
+
+				pks3D = pke3D
+				pks2D = pke2D
+			}
+		}
+	}
+
 	var alpha = percent(anglevis, .05, .1);
 	
 	if ((window_busy = "rendercontrol" && view_control_edit = control) || view.control_mouseon_last = control || !setting_fade_gizmos)
@@ -52,7 +97,7 @@ function view_control_rotate_axis(view, control, vid, color, mat, len)
 		
 		draw_set_color(c_white)
 	}
-	else if (view.control_mouseon_last = control)
+	else if (view.control_mouseon_last = control || (platform_get() == e_platform.ANDROID && androidringmouseon))
 	{
 		// Left click
 		if (mouse_left_pressed)

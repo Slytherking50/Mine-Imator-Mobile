@@ -128,7 +128,7 @@ function tab_template_editor()
 				var state = temp_edit.model_state[i];
 				menu_model_current = model
 				menu_model_state_current = model.states_map[?state]
-				draw_button_menu(state, e_menu.LIST, dx, dyy, dw, 24, temp_edit.model_state[i + 1], minecraft_asset_get_name("modelstatevalue", temp_edit.model_state[i + 1]), (temp_edit.type = e_temp_type.BODYPART) ? action_lib_bodypart_model_state : action_lib_model_state, false, null, null, "", c_white, 1, capwid)
+				draw_button_menu(state, e_menu.LIST, dx, dyy, dw, ui_large_height, temp_edit.model_state[i + 1], minecraft_asset_get_name("modelstatevalue", temp_edit.model_state[i + 1]), (temp_edit.type = e_temp_type.BODYPART) ? action_lib_bodypart_model_state : action_lib_model_state, false, null, null, "", c_white, 1, capwid)
 				dyy += 32
 			}
 			menu_model_current = null
@@ -137,7 +137,7 @@ function tab_template_editor()
 			
 			// Bodypart
 			if (temp_edit.type = e_temp_type.BODYPART)
-				draw_button_menu("templateeditorbodypart", e_menu.LIST, dx, dyy, dw, 24, temp_edit.model_part_name, minecraft_asset_get_name("modelpart", temp_edit.model_part_name), action_lib_model_part_name, false, null, null, "", c_white, 1, capwid)
+				draw_button_menu("templateeditorbodypart", e_menu.LIST, dx, dyy, dw, ui_large_height, temp_edit.model_part_name, minecraft_asset_get_name("modelpart", temp_edit.model_part_name), action_lib_model_part_name, false, null, null, "", c_white, 1, capwid)
 			
 			if (content_mouseon)
 				window_scroll_focus = string(list.scroll)
@@ -234,7 +234,7 @@ function tab_template_editor()
 				var state = temp_edit.block_state[i];
 				menu_block_current = block
 				menu_block_state_current = block.states_map[?state]
-				draw_button_menu(state, e_menu.LIST, dx, dyy, dw, 24, temp_edit.block_state[i + 1], minecraft_asset_get_name("blockstatevalue", temp_edit.block_state[i + 1]), action_lib_block_state, false, null, null, "", c_white, 1, capwid)
+				draw_button_menu(state, e_menu.LIST, dx, dyy, dw, ui_large_height, temp_edit.block_state[i + 1], minecraft_asset_get_name("blockstatevalue", temp_edit.block_state[i + 1]), action_lib_block_state, false, null, null, "", c_white, 1, capwid)
 				dyy += 32
 			}
 			menu_block_current = null

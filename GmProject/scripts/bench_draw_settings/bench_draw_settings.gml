@@ -26,7 +26,27 @@ function bench_draw_settings(bx, by, bw, bh)
 	dx += -16 + (16 * aniease)
 	
 	var sy = dy;
-	
+
+	// Scroll the middle content on Android instead of just letting it clip against the
+	// height cap bench_draw.gml already applies (KNOWN_ISSUES.md B28 - that cap alone keeps
+	// the trailing "Add" button reachable, but anything above it that doesn't fit was simply
+	// invisible, no way back to it). No real clip stack in this engine to nest inside
+	// bench_draw.gml's own outer clip_begin (clip_begin.gml/clip_end.gml: a single global
+	// shader scissor rect, not a stack - confirmed by reading them, not assumed - an inner
+	// clip_end() here would kill the outer popup clip too). Same approach
+	// panel_draw_content.gml already uses everywhere else instead: shrink content_height so
+	// every draw_* primitive's own off-screen culling check (every one of them already tests
+	// against content_y/content_height) does the clipping for free. 56 reserves exactly the
+	// space the trailing Add button + gap already occupies below (`sy + dh - 56`, unchanged,
+	// further down). True no-op on desktop (scrollh = dh, scroll value always 0).
+	var scrollh = dh;
+	if (platform_get() == e_platform.ANDROID)
+	{
+		scrollh = dh - 56
+		content_height = scrollh
+		dy -= bench_settings.settings_scroll.value
+	}
+
 	// Settings
 	if (type_is_timeline(bench_settings.type))
 	{
@@ -187,7 +207,7 @@ function bench_draw_settings(bx, by, bw, bh)
 					menu_model_current = model
 					menu_model_state_current = model.states_map[?state]
 					
-					draw_button_menu(state, e_menu.LIST, dx, dy, dw, 24, bench_settings.model_state[i + 1], minecraft_asset_get_name("modelstatevalue", bench_settings.model_state[i + 1]), action_bench_model_state, false, null, null, "", null, null, capwid)
+					draw_button_menu(state, e_menu.LIST, dx, dy, dw, ui_large_height, bench_settings.model_state[i + 1], minecraft_asset_get_name("modelstatevalue", bench_settings.model_state[i + 1]), action_bench_model_state, false, null, null, "", null, null, capwid)
 					dy += 32
 				}
 				
@@ -198,7 +218,7 @@ function bench_draw_settings(bx, by, bw, bh)
 				// Bodypart
 				if (bench_settings.type = e_temp_type.BODYPART && bench_settings.model_file != null)
 				{
-					draw_button_menu("benchbodypart", e_menu.LIST, dx, dy, dw, 24, bench_settings.model_part_name, minecraft_asset_get_name("modelpart", bench_settings.model_part_name), action_bench_model_part_name, false, null, null, "", null, null, capwid)
+					draw_button_menu("benchbodypart", e_menu.LIST, dx, dy, dw, ui_large_height, bench_settings.model_part_name, minecraft_asset_get_name("modelpart", bench_settings.model_part_name), action_bench_model_part_name, false, null, null, "", null, null, capwid)
 					dy += 32
 				}
 				
@@ -454,7 +474,7 @@ function bench_draw_settings(bx, by, bw, bh)
 					var state = bench_settings.block_state[i];
 					menu_block_current = block
 					menu_block_state_current = block.states_map[?state]
-					draw_button_menu(state, e_menu.LIST, dx, dy, dw, 24, bench_settings.block_state[i + 1], minecraft_asset_get_name("blockstatevalue", bench_settings.block_state[i + 1]), action_bench_block_state, false, null, null, "", null, null, capwid)
+					draw_button_menu(state, e_menu.LIST, dx, dy, dw, ui_large_height, bench_settings.block_state[i + 1], minecraft_asset_get_name("blockstatevalue", bench_settings.block_state[i + 1]), action_bench_block_state, false, null, null, "", null, null, capwid)
 					dy += 32
 				}
 				
@@ -533,7 +553,7 @@ function bench_draw_settings(bx, by, bw, bh)
 				
 				// Shape
 				text = text_get("type" + tl_type_name_list[|e_tl_type.CUBE + bench_settings.shape_type])
-				draw_button_menu("benchshapetype", e_menu.LIST, dx, dy, dw, 24, bench_settings.shape_type, text, action_bench_shape_type, false, null, null, "", null, null, capwid)
+				draw_button_menu("benchshapetype", e_menu.LIST, dx, dy, dw, ui_large_height, bench_settings.shape_type, text, action_bench_shape_type, false, null, null, "", null, null, capwid)
 				dy += 32
 				
 				// Texture
@@ -681,7 +701,13 @@ function bench_draw_settings(bx, by, bw, bh)
 		
 		menu_bench = false
 	}
-	
+
+	if (platform_get() == e_platform.ANDROID)
+	{
+		scrollbar_draw(bench_settings.settings_scroll, e_scroll.VERTICAL, bx + bw - 12, sy, scrollh, (dy + bench_settings.settings_scroll.value) - sy)
+		content_height = dh
+	}
+
 	draw_set_alpha(prevalpha)
 	dx = bx
 	

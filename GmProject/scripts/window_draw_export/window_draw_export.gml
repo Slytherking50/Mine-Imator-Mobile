@@ -101,6 +101,19 @@ function window_draw_export()
 	// Title
 	draw_label(window_state = "export_movie" ? text_get("exportmovietitle") : text_get("exportimagetitle"), framex + framew / 2, framey - 35, fa_center, fa_bottom, c_accent, 1, font_heading_big)
 	
-	// Stop
-	draw_label(text_get("exportstop"), framex + framew / 2, framey - 16, fa_center, fa_bottom, c_text_tertiary, a_text_tertiary, font_caption)
+	// Stop - was a plain label reading "Hold Escape to cancel" (desktop-only instruction,
+	// impossible to act on without a keyboard) with zero tappable equivalent anywhere on this
+	// screen. Now an actual button, reusing the exact same export_escape_time hold-then-confirm
+	// path a real Escape press already goes through (export_update.gml) - a deliberate tap
+	// already carries the same clear intent a 1s key-hold was gating against, so this doesn't
+	// need its own separate confirmation step. Additive only: Escape still works unchanged on
+	// desktop, this just also gives every platform (mouse included, it never had a clickable
+	// stop control here before) a visible way to do the same thing. Found 2026-09-16 auditing
+	// keyboard-only shortcuts for touch equivalents.
+	// draw_button_label's y is the button's TOP (unlike the fa_bottom label this replaces,
+	// which anchored its BOTTOM at framey - 16) - offset by ui_large_height so the button's
+	// bottom edge lands where the old label's bottom did. Not verified on a real screen yet -
+	// may need a nudge once seen (it's close to the title label above at framey - 35).
+	if (draw_button_label("exportstop", framex + framew / 2, framey - 16 - ui_large_height, null, null, e_button.SECONDARY, null, e_anchor.CENTER) && export_escape_time = 0)
+		export_escape_time = current_time
 }

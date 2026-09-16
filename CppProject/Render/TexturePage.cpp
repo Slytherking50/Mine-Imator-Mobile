@@ -76,6 +76,9 @@ namespace CppProject
 			for (IntType p = numPages - 1; p >= 0; p--)
 			{
 				TexturePage* currentPage = pages[p];
+				if (currentPage->sealed)
+					continue;
+
 				bool free = true;
 				pos = currentPage->lastFree.value(imageSize, { 0, 0 });
 
@@ -122,8 +125,6 @@ namespace CppProject
 				}
 			}
 
-			if (page)
-				deleteAndReset(page->texture);
 		}
 
 		// Add new page
@@ -156,6 +157,16 @@ namespace CppProject
 			}
 		}
 
+		// Patch the new sprite directly into the existing GPU texture in place, instead of
+		// destroying and fully re-uploading the whole (up to 4096x4096) page texture on every
+		// single addition. Repeatedly deleting/recreating that texture during a large bulk
+		// import (observed: up to ~1900 times for a full Minecraft asset pack) was confirmed to
+		// corrupt unrelated UI text rendering on at least one Android GPU/driver — see
+		// KNOWN_ISSUES.md. GetTexture() still creates it from scratch the first time (or again
+		// here, if the patch fell outside the texture's current bounds for some reason).
+		if (page->texture && !page->texture->UpdateSubImage(image, pos))
+			deleteAndReset(page->texture);
+
 		// Create location
 		QRect rect = { pos, imageSize };
 		page->rects.append(rect.adjusted(0, 0, 1, 1));
@@ -169,6 +180,12 @@ namespace CppProject
 				(RealType)rect.height() / page->size
 			}
 		);
+	}
+
+	void TexturePage::SealAll()
+	{
+		for (TexturePage* page : pages)
+			page->sealed = true;
 	}
 
 	void TexturePage::Debug()

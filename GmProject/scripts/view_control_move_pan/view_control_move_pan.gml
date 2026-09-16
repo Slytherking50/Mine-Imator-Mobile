@@ -29,7 +29,9 @@ function view_control_move_pan(view, radius)
 			view_control_edit = null
 		}
 	}
-	else if (view.control_mouseon_last = e_view_control.POS_PAN)
+	// Android OR-fallback (Fase 4) - see view_control_move_axis.gml for the full comment.
+	// pos2D/radius2D already computed above (lines 8-11), before this block.
+	else if (view.control_mouseon_last = e_view_control.POS_PAN || (platform_get() == e_platform.ANDROID && place_tl = null && content_mouseon && point_distance(pos2D[X], pos2D[Y], mouse_x - content_x, mouse_y - content_y) < radius2D))
 	{
 		// Left click
 		if (mouse_left_pressed)

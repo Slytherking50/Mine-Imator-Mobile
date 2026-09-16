@@ -8,7 +8,8 @@ function enums()
 	{
 		WINDOWS	= 0,
 		MAC_OS	= 1,
-		LINUX	= 2
+		LINUX	= 2,
+		ANDROID	= 3
 	}
 	
 	// Formats

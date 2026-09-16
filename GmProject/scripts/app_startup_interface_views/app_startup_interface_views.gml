@@ -35,7 +35,10 @@ function app_startup_interface_views()
 	view_main.quality = e_view_mode.SHADED
 	view_main.camera = -4
 	view_main.title = ""
-	
+	view_main.joystick_screen_x = 0
+	view_main.joystick_screen_y = 0
+	view_main.joystick_screen_radius = 0
+
 	view_second = new_obj(obj_view)
 	view_second.show = setting_view_second_show
 	view_second.overlays = setting_view_second_overlays
@@ -51,6 +54,9 @@ function app_startup_interface_views()
 	view_second.quality = e_view_mode.SHADED
 	view_second.camera = -5
 	view_second.title = ""
+	view_second.joystick_screen_x = 0
+	view_second.joystick_screen_y = 0
+	view_second.joystick_screen_radius = 0
 	
 	view_glow_ani = 0
 	view_glow_location_prev = ""

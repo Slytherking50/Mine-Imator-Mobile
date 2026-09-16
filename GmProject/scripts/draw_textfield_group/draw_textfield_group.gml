@@ -225,7 +225,9 @@ function draw_textfield_group(name, xx, yy, wid, mul, minval, maxval, snapval, s
 				window_busy = ""
 				app_mouse_clear()
 			}
-			else if (mouse_dx != 0)
+			// mouse_move > 5, same reasoning/threshold as draw_dragger.gml (Fase 3, CLAUDE.md
+			// §6.2) - "any dx" fires a drag on almost every tap under touch jitter
+			else if (mouse_move > 5)
 			{
 				dragger_drag_value = textfield_value[i]
 				window_busy = textfield_name[i] + "drag" // Start dragging
@@ -236,8 +238,16 @@ function draw_textfield_group(name, xx, yy, wid, mul, minval, maxval, snapval, s
 		if (window_busy = textfield_name[i] + "drag")
 		{ 
 			mouse_cursor = cr_none
-			dragger_drag_value += (mouse_x - mouse_click_x) * (textfield_mul[i] = null ? mul : textfield_mul[i]) * dragger_multiplier
-			window_mouse_set(mouse_click_x, mouse_click_y)
+
+			// INSTRUMENTAL, mismo fix que draw_dragger.gml (B10, KNOWN_ISSUES.md) - ver el
+			// comentario ahí
+			if (platform_get() == e_platform.ANDROID)
+				dragger_drag_value += mouse_dx * (textfield_mul[i] = null ? mul : textfield_mul[i]) * dragger_multiplier
+			else
+			{
+				dragger_drag_value += (mouse_x - mouse_click_x) * (textfield_mul[i] = null ? mul : textfield_mul[i]) * dragger_multiplier
+				window_mouse_set(mouse_click_x, mouse_click_y)
+			}
 			
 			var d;
 			

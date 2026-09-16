@@ -538,6 +538,34 @@ namespace CppProject
 		return true;
 	}
 
+	// QThread::create() (used below) needs QT_CONFIG(cxx11_future) - this Qt-for-Android build
+	// doesn't have it (std::future/std::async weren't detected as available for this NDK/libc++
+	// combination at Qt's own configure time). Confirmed 2026-09-06 with a real Android build
+	// attempt ("no member named 'create' in 'QThread'"). This is a pre-C++11 QThread subclass
+	// instead, which needs no such feature and self-deletes the same way QThread::create's
+	// result does (connect finished to deleteLater).
+	struct BlockCacheCompressThread : QThread
+	{
+		QString outName, tempName;
+		QByteArray data;
+		BlockCacheCompressThread(QString outName, QString tempName, QByteArray data)
+			: outName(outName), tempName(tempName), data(data) {}
+
+		void run() override
+		{
+			Timer tmr;
+			QFile outFile(outName);
+			QFile tempFile(tempName);
+			AddPerms(tempFile);
+			Gzip::Compress(data, tempName);
+			AddPerms(outFile);
+			outFile.remove();
+			tempFile.copy(outName);
+			tempFile.remove();
+			tmr.Print("Compress block mesh cache");
+		}
+	};
+
 	void res_save_block_cache(Scope<obj_resource> self, StringType filename)
 	{
 	#if !BLOCK_MESH_CACHE_ENABLED
@@ -590,22 +618,10 @@ namespace CppProject
 		tmr.Print("Write block mesh cache");
 
 		// Compress on a new thread
-		QThread* thread;
 		QString outName = filename.QStr();
 		QString tempName = (QString)gmlGlobal::game_save_id + QFileInfo(filename).fileName();
-		thread = QThread::create([outName, tempName, data]
-		{
-			Timer tmr;
-			QFile outFile(outName);
-			QFile tempFile(tempName);
-			AddPerms(tempFile);
-			Gzip::Compress(data, tempName);
-			AddPerms(outFile);
-			outFile.remove();
-			tempFile.copy(outName);
-			tempFile.remove();
-			tmr.Print("Compress block mesh cache");
-		});
+		QThread* thread = new BlockCacheCompressThread(outName, tempName, data);
+		QObject::connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 		thread->start();
 	}
 

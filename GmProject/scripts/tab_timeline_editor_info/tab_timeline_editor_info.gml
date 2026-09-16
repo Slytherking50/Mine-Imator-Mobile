@@ -5,7 +5,7 @@ function tab_timeline_editor_info()
 	// Name
 	tab_control_textfield()
 	tab.info.tbx_name.text = tl_edit.name
-	draw_textfield("timelineeditorname", dx, dy, dw, 24, tab.info.tbx_name, action_tl_name, string_remove_newline(tl_edit.display_name), "top")
+	draw_textfield("timelineeditorname", dx, dy, dw, ui_touch_textfield_height, tab.info.tbx_name, action_tl_name, string_remove_newline(tl_edit.display_name), "top")
 	tab_next()
 	
 	if (tl_edit.type = e_temp_type.TEXT)
