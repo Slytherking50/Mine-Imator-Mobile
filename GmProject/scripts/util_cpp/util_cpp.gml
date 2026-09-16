@@ -119,6 +119,15 @@ function android_folder_tree_write_file(parent_doc_uri, name, local_path)
 	return false
 }
 
+/// CppSeparate BoolType android_share_log()
+/// Opens Android's share sheet for log.txt (2026-09-16, user request - a friend testing on
+/// their own device has no other way to get the file out, scoped storage hides it from any
+/// file manager). Always false elsewhere - desktop already has F11/open_url(log_file).
+function android_share_log()
+{
+	return false
+}
+
 /// CppSeparate IntType touch_count()
 /// Number of simultaneous touch points currently down (Android only; always 0 elsewhere) -
 /// KNOWN_ISSUES.md B10/Trampa 1, Fase 4 pinch/pan gestures.

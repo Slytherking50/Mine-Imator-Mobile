@@ -16,6 +16,17 @@ function tab_settings_program()
 	draw_button_menu("settingsminecraftversion", e_menu.LIST, dx, dy, dw, ui_large_height, setting_minecraft_assets_version, setting_minecraft_assets_version, action_setting_minecraft_assets_version, false, null, null, "", c_white, c_white)
 	tab_next()
 	
+	// Share log.txt (Android-only, 2026-09-16 user request) - scoped storage hides the app's
+	// internal folder from any file manager by OS design, this is the real equivalent of
+	// desktop's F11/open_url(log_file).
+	if (platform_get() = e_platform.ANDROID)
+	{
+		tab_control_button_label()
+		if (draw_button_label("settingssharelog", dx + dw, dy, null, icons.FILE_EXPORT, e_button.SECONDARY, null, e_anchor.RIGHT))
+			android_share_log()
+		tab_next()
+	}
+
 	// Backups
 	tab_control_switch()
 	draw_button_collapse("backup", collapse_map[?"backup"], action_setting_backup, setting_backup, "settingsbackup")
