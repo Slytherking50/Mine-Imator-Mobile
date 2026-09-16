@@ -13,8 +13,17 @@
 /// @arg [radius
 /// @arg sprite]
 
-function draw_wheel(name, xx, yy, color, value, minval, maxval, def, snapval, tbx, script, rad = 24, sprite = undefined)
+function draw_wheel(name, xx, yy, color, value, minval, maxval, def, snapval, tbx, script, rad = undefined, sprite = undefined)
 {
+	// rad can't default to ui_touch_wheel_radius in the parameter list - GML default
+	// parameter expressions that reference instance variables transpile to invalid C++
+	// (CppGen emits a reference to `self` in a position where it isn't available,
+	// "uso no válido de variable local como parámetro predeterminado"). Computed here
+	// instead - ui_touch_wheel_radius (app_update_interface.gml) is 24 on desktop (matches
+	// the old hardcoded default exactly, zero change there), bigger on Android for touch.
+	if (is_undefined(rad))
+		rad = ui_touch_wheel_radius
+
 	if (xx + rad < content_x || xx - rad > content_x + content_width || yy + rad < content_y || yy - rad > content_y + content_height)
 		return 0
 	

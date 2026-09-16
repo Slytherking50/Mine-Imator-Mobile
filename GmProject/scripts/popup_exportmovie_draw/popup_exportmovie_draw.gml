@@ -11,7 +11,7 @@ function popup_exportmovie_draw()
 		text = text_get("projectvideosizetemplate" + project_video_template.name) + " (" + string(project_video_template.width) + "x" + string(project_video_template.height) + ")"
 	
 	tab_control_menu()
-	draw_button_menu("exportmovievideosize", e_menu.LIST, dx, dy, dw, 24, project_video_template, text, action_project_video_template)
+	draw_button_menu("exportmovievideosize", e_menu.LIST, dx, dy, dw, ui_large_height, project_video_template, text, action_project_video_template)
 	tab_next()
 	
 	// Custom
@@ -33,7 +33,7 @@ function popup_exportmovie_draw()
 	
 	// Format
 	tab_control_menu()
-	draw_button_menu("exportmovieformat", e_menu.LIST, dx, dy, dw, 24, popup.format, text_get("exportmovieformat" + popup.format), action_toolbar_exportmovie_format)
+	draw_button_menu("exportmovieformat", e_menu.LIST, dx, dy, dw, ui_large_height, popup.format, text_get("exportmovieformat" + popup.format), action_toolbar_exportmovie_format)
 	tab_next()
 	
 	if (popup.format != "png")
@@ -45,7 +45,7 @@ function popup_exportmovie_draw()
 			text = text_get("exportmovievideoquality" + popup.video_quality.name)
 		
 		tab_control_menu()
-		draw_button_menu("exportmovievideoquality", e_menu.LIST, dx, dy, dw, 24, popup.video_quality, text, action_toolbar_exportmovie_video_quality)
+		draw_button_menu("exportmovievideoquality", e_menu.LIST, dx, dy, dw, ui_large_height, popup.video_quality, text, action_toolbar_exportmovie_video_quality)
 		tab_next()
 		
 		// Custom quality
@@ -64,7 +64,7 @@ function popup_exportmovie_draw()
 		text = string(popup.frame_rate)
 	
 	tab_control_menu()
-	draw_button_menu("exportmovieframerate", e_menu.LIST, dx, dy, dw, 24, popup.frame_rate, text, action_toolbar_exportmovie_frame_rate)
+	draw_button_menu("exportmovieframerate", e_menu.LIST, dx, dy, dw, ui_large_height, popup.frame_rate, text, action_toolbar_exportmovie_frame_rate)
 	tab_next()
 	
 	if (popup.frame_rate = 0)

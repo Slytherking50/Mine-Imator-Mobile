@@ -114,7 +114,7 @@ function colorpicker_draw()
 	}
 	else if (colorpicker.mode = "hex")
 	{
-		if (draw_inputbox("colorpickerhex", dx, dy, 176, 24, color_to_hex(colorpicker.def), colorpicker.tbx_hexadecimal, null))
+		if (draw_inputbox("colorpickerhex", dx, dy, 176, ui_touch_textfield_height, color_to_hex(colorpicker.def), colorpicker.tbx_hexadecimal, null))
 			colorpicker_update(colorpicker.tbx_hexadecimal, colorpicker.tbx_hexadecimal.text = "" ? colorpicker.def : hex_to_color(colorpicker.tbx_hexadecimal.text), true)
 	
 		if (colorpicker.tbx_hexadecimal.text = "" && window_focus = "")

@@ -8,6 +8,78 @@
 #define ZIP_STATIC
 #include <zip.h>
 
+#if defined(Q_OS_ANDROID)
+#include <private/qjni_p.h>
+#include <private/qjnihelpers_p.h>
+
+namespace
+{
+	// Same helper as Buffer.cpp's (2026-09-15) - lib_file_copy below is the native C++ target
+	// external_call(lib_file_copy, ...) resolves to in the compiled app (surface_save_lib.gml's
+	// "write to a local temp, then lib_file_copy to the real destination" pattern - PNG/image
+	// export's actual path), and needs the same content:// destination handling QFile::copy()
+	// can't do. Duplicated rather than shared across translation units, matching
+	// Buffer.cpp/Qt's own androidcontentfileengine.cpp for the same small helper.
+	class JniExceptionCleaner
+	{
+	public:
+		JniExceptionCleaner() { clearException(); }
+		~JniExceptionCleaner() { clearException(); }
+
+		bool clean() { return clearException(); }
+	private:
+		bool clearException()
+		{
+			QJNIEnvironmentPrivate env;
+			if (env->ExceptionCheck())
+			{
+				env->ExceptionDescribe();
+				env->ExceptionClear();
+				return true;
+			}
+			return false;
+		}
+	};
+
+	bool WriteBytesToAndroidContentUri(const QString& uriStr, const char* bytes, qint64 size)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate juri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(uriStr).object());
+
+		if (!juri.isValid())
+			return false;
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			juri.object(), QJNIObjectPrivate::fromString("wt").object());
+
+		if (exceptionCleaner.clean() || !pfd.isValid())
+			return false;
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+			return false;
+
+		QFile out;
+		bool ok = false;
+		if (out.open(fd, QFile::WriteOnly | QFile::Truncate, QFile::DontCloseHandle))
+		{
+			ok = (out.write(bytes, size) == size);
+			out.close();
+		}
+
+		pfd.callMethod<void>("close");
+		return ok;
+	}
+}
+#endif
+
 namespace CppProject
 {
 	RealType lib_open_url(StringType url)
@@ -143,11 +215,43 @@ namespace CppProject
 		return ok;
 	}
 
+	// Added for the Android Data/ bundle-seeding verification (Fase 3, CLAUDE.md §17,
+	// 2026-09-10) - QFileInfo::size() works transparently against ":/" Qt resource paths
+	// too, so the same call verifies both the bundled source and the copied destination.
+	// Returns -1 if the file doesn't exist, matching the "not found" convention other
+	// lib_* functions use via file_exists_lib() rather than throwing.
+	RealType lib_file_size(StringType fn)
+	{
+		QFileInfo info((QString)fn);
+		if (!info.exists())
+			return -1;
+		return (RealType)info.size();
+	}
+
 	RealType lib_file_copy(StringType src, StringType dst)
 	{
 		QFile srcFile(src);
 		if (!srcFile.exists())
 			return false;
+
+#if defined(Q_OS_ANDROID)
+		if (dst.StartsWith("content://"))
+		{
+			AddPerms(srcFile);
+			if (!srcFile.open(QFile::ReadOnly))
+			{
+				WARNING("Could not open " + src.QStr() + " to copy to content URI: " + srcFile.errorString());
+				return false;
+			}
+			QByteArray bytes = srcFile.readAll();
+			srcFile.close();
+
+			BoolType ok = WriteBytesToAndroidContentUri(dst.QStr(), bytes.constData(), bytes.size());
+			if (!ok)
+				WARNING("Could not copy " + src.QStr() + " to content URI " + dst.QStr());
+			return ok;
+		}
+#endif
 
 		QFile dstFile(dst);
 		if (dstFile.exists())

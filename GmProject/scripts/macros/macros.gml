@@ -25,6 +25,13 @@ function macros()
 	#macro mineimator_version_full		(mineimator_version + ((mineimator_version_sub != "") ? " " + mineimator_version_sub : "") + ((mineimator_version_extra != "") ? " (" + mineimator_version_extra + ")" : ""))
 	#macro mineimator_version_date		"2023.11.12"
 	#macro minecraft_version			"1.20.2"
+	// Android-only fallback when no real Minecraft version is present (KNOWN_ISSUES.md B25) -
+	// a from-scratch, self-authored empty resource pack, not a Minecraft version number, so
+	// it never reads as a real one in logs/UI. Named "Game Base" (not "placeholder", renamed
+	// 2026-09-11) since it's what actually shows in the version selector (list_init.gml
+	// derives the displayed name directly from this filename) - "placeholder" read as
+	// unfinished/broken there, "Game Base" reads as the deliberate empty foundation it is.
+	#macro minecraft_placeholder_version	"Game Base"
 	#macro gm_runtime					GM_runtime_version
 	
 	// File formats
@@ -42,6 +49,10 @@ function macros()
 	#macro minecraft_directory			data_directory + "Minecraft/"
 	#macro render_directory				data_directory + "Render/"
 	#macro splash_directory				data_directory + "Splashes/"
+	// Android-only custom loading screen's own render pool (window_draw_load_assets.gml,
+	// android_load_render), deliberately separate from splash_directory (the desktop
+	// dialog's own splash system) - see that file's comments for why.
+	#macro load_renders_directory			data_directory + "LoadRenders/"
 	
 	// Files
 	#macro language_file				languages_directory + "english.milanguage"
@@ -53,6 +64,14 @@ function macros()
 	#macro log_file						user_directory_get() + "log.txt"
 	#macro temp_file					file_directory + "tmp.file"
 	#macro temp_image					file_directory + "tmp.png"
+	// Android video export (2026-09-15) - FFmpeg's avio_open() (MovieLib.cpp) doesn't
+	// understand content:// URIs any more than QFile did (§6.4/Fase 5) and has no Qt fallback
+	// to catch it, so the encoder always targets this real local path on Android; the picked
+	// content:// destination only gets the finished file copied onto it afterward
+	// (action_toolbar_exportmovie_save.gml/export_done_movie.gml), same "write local, copy
+	// out" pattern already proven for images (surface_save_lib.gml) and JSON saves
+	// (Buffer::Save).
+	#macro temp_movie_file				file_directory + "tmp_export_movie.file"
 	#macro download_image_file			file_directory + "download.png"
 	#macro unzip_directory				file_directory + "unzip/"
 	#macro render_default				"performance"
@@ -92,6 +111,15 @@ function macros()
 	#macro link_skins					"https://www.mineimator.com/skin?username="
 	#macro link_forums					"https://www.mineimatorforums.com"
 	#macro link_forums_bugs				"https://www.mineimatorforums.com/index.php?/forum/51-issues-and-bugs/&do=add"
+
+	// Android auto-update (2026-09-15, user request) - public GitHub repo, no token needed
+	// (github.com/Slytherking50/Mine-Imator-Mobile - confirmed public via the API before
+	// wiring this up). android_app_version has to be bumped by hand alongside a new GitHub
+	// Release's tag each time one is published - nothing here reads it automatically. Keep
+	// the "v" prefix consistent with the tag names actually used (GitHub's own convention,
+	// e.g. "v0.0.1") - app_event_http.gml compares them as plain strings, not parsed semver.
+	#macro link_update_check			"https://api.github.com/repos/Slytherking50/Mine-Imator-Mobile/releases/latest"
+	#macro android_app_version			"v0.0.2"
 	#macro link_forums_upload			"https://www.mineimatorforums.com/index.php?/topic/10-guide-how-to-post-a-mine-imator-project/"
 	#macro link_minecraft				"https://www.minecraft.net"
 	#macro link_david					"https://www.stuffbydavid.com"
@@ -142,8 +170,11 @@ function macros()
 	#macro glow_alpha					0.5
 	#macro shadow_size					5
 	#macro shadow_alpha					0.1
-	#macro view_3d_control_size			0.2125
-	#macro view_3d_control_width		20
+	// view_3d_control_size/view_3d_control_width used to be #macro (fixed for every
+	// platform) - now real variables set in app_update_interface.gml, bigger on Android
+	// (Fase 3/4, CLAUDE.md §6.2: los gizmos de mover/rotar/escalar del viewport 3D son
+	// otro touch target chico para mouse, no para el dedo). Desktop keeps the exact same
+	// numbers as before.
 	#macro view_3d_box_size				12
 	#macro button_padding				24
 	#macro button_icon_padding			52

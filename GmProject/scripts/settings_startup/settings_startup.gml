@@ -3,8 +3,12 @@
 function settings_startup()
 {
 	trial_startup()
-	
-	setting_advanced_mode = dev_mode_advanced
+
+	// Android ships with Advanced Mode on by default (2026-09-15, explicit user request) -
+	// desktop keeps dev_mode_advanced (on in dev builds, off in release) untouched. Only
+	// affects a fresh install: settings_load.gml overrides this with a saved value ("scale"
+	// section's own value_get_real pattern) if the user ever toggles it off later.
+	setting_advanced_mode = (platform_get() == e_platform.ANDROID) ? true : dev_mode_advanced
 	
 	setting_minecraft_assets_version = minecraft_version
 	setting_minecraft_assets_new_version = ""
@@ -35,7 +39,15 @@ function settings_startup()
 	setting_watermark_opacity = 1
 	
 	setting_theme = theme_light
-	setting_accent = 3
+	// Purple, not the upstream default green (was index 3) - explicit user request,
+	// 2026-09-12: "todo el color verde de la pantalla debe ser morado, ademas de la app
+	// entera", matching this fork's own new (purple) logo. Index 7 is an existing preset
+	// already defined in every theme variant (app_startup_themes.gml) - not a new color,
+	// so it's already contrast-checked against all 3 themes' backgrounds/text, unlike a
+	// one-off hex value would be. Only changes the DEFAULT for a fresh install/settings
+	// reset - anyone with a saved settings.midata keeps whatever they'd already picked,
+	// same as any other setting_* default.
+	setting_accent = 7
 	setting_accent_custom = hex_to_color("03A9F4")
 	
 	setting_language_filename = language_file
@@ -55,6 +67,16 @@ function settings_startup()
 	setting_place_new = true
 	setting_interface_scale_auto = true
 	setting_interface_scale = interface_scale_default_get()
+	// interface_scale_set() actually pushes the factor into the C++ renderer (App->scale,
+	// default 1.0) - without this call it was only ever applied from inside settings_load(),
+	// which returns early when settings.midata doesn't exist yet (fresh install). Result: first
+	// launch ever renders at scale 1.0 regardless of real monitor DPI (tiny UI on a 125%/150%
+	// scaled display), and only looks right starting the second launch once a settings file
+	// exists to reach that call. Reported by beta testers 2026-09-11 ("la primera vez... la UI
+	// se hace Super pequeña"). Calling it here too makes the first-ever launch consistent with
+	// every launch after; settings_load() still re-applies it a moment later (auto or custom),
+	// harmless.
+	interface_scale_set(setting_interface_scale)
 	setting_interface_compact = false
 	
 	setting_panel_left_bottom_size = 300
@@ -146,7 +168,7 @@ function settings_startup()
 	// New UI settings
 	setting_reduced_motion = false
 	setting_wind_enable = true
-	
+
 	settings_load()
 	languages_load()
 	interface_update_instant()

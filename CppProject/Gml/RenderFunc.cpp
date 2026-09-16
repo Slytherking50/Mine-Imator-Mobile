@@ -309,7 +309,10 @@ namespace CppProject
 		GFX->SubmitBatch();
 		GFX->shader->EndUse();
 		GFX->shader = PR->GetShader();
-		GFX->shader->BeginUse();
+		// See AppHandler.cpp's main render loop BeginUse() call for why this is checked now
+		// (2026-09-16) - was previously silently ignored here too.
+		if (!GFX->shader->BeginUse())
+			DEBUG("[WARNING] Shader::BeginUse() failed in shader_reset() - GL program not bound");
 	}
 
 	void shader_set_uniform_f_array(IntType handle, VarType arr)
@@ -339,7 +342,10 @@ namespace CppProject
 			GFX->SubmitBatch();
 			GFX->shader->EndUse();
 			GFX->shader = shader;
-			GFX->shader->BeginUse();
+			// See AppHandler.cpp's main render loop BeginUse() call for why this is checked now
+			// (2026-09-16) - was previously silently ignored here too.
+			if (!GFX->shader->BeginUse())
+				DEBUG("[WARNING] Shader::BeginUse() failed in shader_set() - GL program not bound");
 
 			// Update shader with latest matrices
 			GFX->shader->SubmitMatrix(Shader::M, GFX->matrixM);

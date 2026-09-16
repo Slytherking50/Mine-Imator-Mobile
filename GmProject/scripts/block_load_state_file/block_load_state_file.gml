@@ -6,12 +6,13 @@
 
 function block_load_state_file(fname, block, state)
 {
-	if (!file_exists_lib(fname))
-	{
-		log("Could not find state file", filename_name(fname))
-		return null
-	}
-	
+	// file_exists_lib() was a QFile::exists() stat() call before json_load() below, which
+	// already does its own QFile::open() and fails cleanly (returns an invalid map) when the
+	// file doesn't exist - the stat was pure redundant I/O on the hot path (called once per
+	// blockstate file needed per block, thousands of times during asset load, confirmed the
+	// real cost of the ~98s load time on Android - CLAUDE.md B21). Removed 2026-09-09; the
+	// only behavior change is the log message on a genuinely missing file ("could not parse"
+	// instead of "could not find") - functionally identical (both return null).
 	var jsontypemap, map;
 	jsontypemap = ds_int_map_create()
 	map = json_load(fname, jsontypemap);

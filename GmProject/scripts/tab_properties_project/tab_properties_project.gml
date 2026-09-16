@@ -5,7 +5,7 @@ function tab_properties_project()
 	// Project name
 	tab.project.tbx_name.text = project_name
 	tab_control_textfield()
-	if (draw_textfield("projectname", dx, dy, dw, 24, tab.project.tbx_name, null, "", "top"))
+	if (draw_textfield("projectname", dx, dy, dw, ui_touch_textfield_height, tab.project.tbx_name, null, "", "top"))
 	{
 		project_changed = true
 		project_name = tab.project.tbx_name.text
@@ -15,7 +15,7 @@ function tab_properties_project()
 	// Project author
 	tab.project.tbx_author.text = project_author
 	tab_control_textfield()
-	if (draw_textfield("projectauthor", dx, dy, dw, 24, tab.project.tbx_author, null, "", "top"))
+	if (draw_textfield("projectauthor", dx, dy, dw, ui_touch_textfield_height, tab.project.tbx_author, null, "", "top"))
 	{
 		project_changed = true
 		project_author = tab.project.tbx_author.text
@@ -48,7 +48,7 @@ function tab_properties_project()
 		text = text_get("projectvideosizetemplate" + project_video_template.name) + " (" + string(project_video_template.width) + "x" + string(project_video_template.height) + ")"
 	
 	tab_control_menu()
-	draw_button_menu("projectvideosize", e_menu.LIST, dx, dy, dw, 24, project_video_template, text, action_project_video_template)
+	draw_button_menu("projectvideosize", e_menu.LIST, dx, dy, dw, ui_large_height, project_video_template, text, action_project_video_template)
 	tab_next()
 	
 	// Custom

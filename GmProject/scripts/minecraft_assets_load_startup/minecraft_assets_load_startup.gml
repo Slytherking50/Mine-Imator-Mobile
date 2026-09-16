@@ -39,11 +39,15 @@ function minecraft_assets_load_startup()
 		material_format = e_material.FORMAT_NONE
 	}
 	
-	// Load assets from version in settings, if it fails, reset to default
+	// Load assets from version in settings, if it fails, reset to the default. On Android the
+	// default (minecraft_version, "1.20.2") is never present - KNOWN_ISSUES.md B23 - so fall
+	// back to the bundled placeholder pack instead (B25); every other platform keeps falling
+	// back to minecraft_version exactly as before.
 	if (!minecraft_assets_load_startup_version())
 	{
-		log("Could not load " + string(app.setting_minecraft_assets_version) + " assets. Resetting to default", minecraft_version)
-		app.setting_minecraft_assets_version = minecraft_version
+		var fallback_version = (platform_get() == e_platform.ANDROID) ? minecraft_placeholder_version : minecraft_version;
+		log("Could not load " + string(app.setting_minecraft_assets_version) + " assets. Resetting to default", fallback_version)
+		app.setting_minecraft_assets_version = fallback_version
 		if (!minecraft_assets_load_startup_version())
 			return false
 	}
@@ -59,13 +63,13 @@ function minecraft_assets_load_startup()
 		splashlist = map[?"splashes"]
 		splash = splashlist[|irandom(ds_list_size(splashlist) - 1)]
 		splashfile = splash_directory + splash[?"file"]
-		
+
 		if (file_exists_lib(splashfile))
 		{
 			load_assets_splash = sprite_add(splashfile, 0, 0, 0, 0, 0)
 			load_assets_credits = splash[?"credits"]
 		}
 	}
-	
+
 	return true
 }

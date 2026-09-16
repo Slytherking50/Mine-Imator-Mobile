@@ -89,6 +89,9 @@ function app_startup_interface_bench()
 		
 		// Item list
 		item_scroll = new_obj(obj_scrollbar)
+
+		// Settings panel scroll (Android only, see bench_draw_settings.gml - KNOWN_ISSUES.md B28)
+		settings_scroll = new_obj(obj_scrollbar)
 	
 		// Block list
 		block_list = new_obj(obj_sortlist)

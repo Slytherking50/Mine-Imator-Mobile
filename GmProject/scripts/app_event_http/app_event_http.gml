@@ -198,4 +198,99 @@ function app_event_http()
 			}
 		}
 	}
+
+	// Android auto-update - check GitHub's latest release
+	else if (async_load[?"id"] = http_check_update && async_load[?"status"] < 1)
+	{
+		http_check_update = null
+		if (async_load[?"status"] = 0 && async_load[?"http_status"] = http_ok)
+		{
+			var decodedmap = json_decode(async_load[?"result"]);
+			if (ds_map_valid(decodedmap))
+			{
+				var tagname = decodedmap[?"tag_name"];
+				if (is_string(tagname) && version_string_is_newer(tagname, android_app_version))
+				{
+					var assetslist = decodedmap[?"assets"];
+					var apkurl = "";
+					if (ds_list_valid(assetslist))
+					{
+						for (var a = 0; a < ds_list_size(assetslist); a++)
+						{
+							var assetmap = assetslist[|a];
+							if (ds_map_valid(assetmap) && is_string(assetmap[?"name"]) && string_pos(".apk", assetmap[?"name"]) > 0)
+							{
+								apkurl = assetmap[?"browser_download_url"]
+								break
+							}
+						}
+					}
+
+					// Found a newer tag but no .apk attached to the release yet (e.g. a
+					// release created without uploading the build) - nothing to offer.
+					if (apkurl != "")
+					{
+						toast_new(e_toast.INFO, text_get("alertupdateavailable", tagname))
+						toast_add_action("alertupdatedownload", action_start_apk_download, apkurl)
+						toast_last.dismiss_time = no_limit
+
+						log("Update available", tagname)
+					}
+				}
+
+				ds_map_destroy(decodedmap)
+			}
+		}
+	}
+
+	// Android auto-update - APK download finished
+	else if (async_load[?"id"] = http_download_update)
+	{
+		if (async_load[?"status"] != 1)
+		{
+			http_download_update = null
+
+			if (async_load[?"http_status"] = http_ok)
+			{
+				if (!android_install_apk(user_directory_get() + "updates/update.apk"))
+					toast_new(e_toast.NEGATIVE, text_get("errorupdateinstall"))
+			}
+			else
+				toast_new(e_toast.NEGATIVE, text_get("errorupdatedownload"))
+		}
+	}
+}
+
+// Android auto-update - starts the APK download once the user taps the toast's action
+function action_start_apk_download(url)
+{
+	var dir = user_directory_get() + "updates/";
+	if (!directory_exists_lib(dir))
+		directory_create_lib(dir)
+
+	http_download_update = http_get_file(url, dir + "update.apk")
+	toast_new(e_toast.INFO, text_get("alertupdatedownloading"))
+}
+
+// Android auto-update - is version string a ("v1.2.3") strictly newer than b? Used instead of
+// a plain != check on tag_name (the check above this function, 2026-09-15) - a bare inequality
+// would also fire, and offer a "downgrade", if the installed build's own android_app_version is
+// already ahead of the latest published GitHub tag (e.g. this exact project right now: no real
+// release has been tagged yet). Missing/non-numeric components compare as 0.
+function version_string_is_newer(a, b)
+{
+	var partsa = string_split(string_replace(a, "v", ""), ".")
+	var partsb = string_split(string_replace(b, "v", ""), ".")
+	var count = max(array_length(partsa), array_length(partsb))
+
+	for (var i = 0; i < count; i++)
+	{
+		var na = (i < array_length(partsa)) ? real(partsa[i]) : 0
+		var nb = (i < array_length(partsb)) ? real(partsb[i]) : 0
+
+		if (na != nb)
+			return na > nb
+	}
+
+	return false
 }

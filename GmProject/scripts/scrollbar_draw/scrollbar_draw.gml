@@ -148,6 +148,65 @@ function scrollbar_draw(sb, dir, xx, yy, size, maxsize)
 		}
 	}
 	
+	// Swipe-to-scroll - touch has no mouse wheel (block above only fires on desktop's actual
+	// wheel), and the scrollbar thumb itself is a thin 6-12px strip, unreliable to grab
+	// exactly with a finger. Detected anywhere over the content this scrollbar belongs to
+	// (content_x/y/width/height - every caller already sets these to its own panel bounds
+	// before calling this), so a swipe anywhere on a list/panel/menu/timeline scrolls it, not
+	// just its scrollbar strip - single choke point, covers every caller of this function at
+	// once (CLAUDE.md §6.1: sortlist, menu, panels, timeline, recent projects, texture picker,
+	// pattern editor). `!mouseinarea` excludes the scrollbar's own precise thumb/track hitbox,
+	// already handled above with its own (more precise, size/maxsize-scaled) tracking - this
+	// only takes over presses that land elsewhere in the content, so grabbing the actual
+	// thumb still works exactly as before, unchanged. Same click-vs-drag threshold as
+	// draw_dragger.gml's own touch fix (5px total displacement since press) so a tap still
+	// reaches whatever control is under the finger. Android only - desktop keeps using the
+	// wheel above, unchanged.
+	var swipename = "scrollswipe" + string(sb);
+
+	if (platform_get() == e_platform.ANDROID)
+	{
+		if (window_busy = "" && window_focus = "" && content_mouseon && !mouseinarea && mouse_left_pressed)
+		{
+			var swipezone;
+			if (dir = e_scroll.HORIZONTAL)
+				swipezone = app_mouse_box(xx, content_y, size, content_height)
+			else
+				swipezone = app_mouse_box(content_x, yy, content_width, size)
+
+			if (swipezone)
+				window_focus = swipename
+		}
+
+		if (window_focus = swipename)
+		{
+			if (!mouse_left)
+				window_focus = ""
+			else if (mouse_move > 5)
+			{
+				window_busy = swipename
+				window_focus = ""
+				app_mouse_clear()
+			}
+		}
+
+		if (window_busy = swipename)
+		{
+			if (dir = e_scroll.HORIZONTAL)
+				sb.value_goal -= mouse_dx
+			else
+				sb.value_goal -= mouse_dy
+
+			sb.value = sb.value_goal
+
+			if (!mouse_left)
+			{
+				window_busy = ""
+				app_mouse_clear()
+			}
+		}
+	}
+
 	sb.value = round(clamp(sb.value, 0, maxsize - size))
 	
 	if (!sb.zoomable || (sb = timeline.hor_scroll && timeline_zoom = timeline_zoom_goal))

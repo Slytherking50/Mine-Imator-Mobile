@@ -39,7 +39,7 @@ function draw_checkbox(name, xx, yy, active, script, tip = "")
 	
 	var checkboxx, checkboxy;
 	checkboxx = xx
-	checkboxy = yy + (h/2) - 8
+	checkboxy = yy + (h/2) - (ui_touch_checkbox_glyph_size / 2)
 	
 	var offcolor, offalpha, oncolor, onalpha, color, alpha;
 	offcolor = merge_color(c_text_secondary, c_text_main, microani_arr[e_microani.HOVER])
@@ -59,11 +59,11 @@ function draw_checkbox(name, xx, yy, active, script, tip = "")
 	alpha = lerp(alpha, a_text_tertiary, microani_arr[e_microani.DISABLED])
 	
 	// Draw checkbox
-	draw_outline(checkboxx, checkboxy, 16, 16, 2 + (6 * microani_arr[e_microani.ACTIVE]), color, alpha, true)
-	draw_image(spr_checkbox_tick, 0, checkboxx + 8, checkboxy + 8, 1, 1, c_level_middle, 1 * microani_arr[e_microani.ACTIVE])
-	
+	draw_outline(checkboxx, checkboxy, ui_touch_checkbox_glyph_size, ui_touch_checkbox_glyph_size, 2 + (6 * microani_arr[e_microani.ACTIVE]), color, alpha, true)
+	draw_image(spr_checkbox_tick, 0, checkboxx + (ui_touch_checkbox_glyph_size / 2), checkboxy + (ui_touch_checkbox_glyph_size / 2), 1, 1, c_level_middle, 1 * microani_arr[e_microani.ACTIVE])
+
 	// Draw hover outline
-	draw_box_hover(checkboxx, checkboxy, 16, 16, microani_arr[e_microani.PRESS])
+	draw_box_hover(checkboxx, checkboxy, ui_touch_checkbox_glyph_size, ui_touch_checkbox_glyph_size, microani_arr[e_microani.PRESS])
 	
 	// Label
 	var shortlabel = string_limit(text, dw - 24);

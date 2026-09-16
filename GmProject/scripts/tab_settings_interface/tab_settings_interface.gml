@@ -48,7 +48,7 @@ function tab_settings_interface()
 	
 	// Language
 	tab_control_menu()
-	draw_button_menu("settingslanguage", e_menu.LIST, dx, dy, dw, 24, setting_language_filename, text_get("filelanguage"), null, false, null, null, text_get("filelocale"), null, null)
+	draw_button_menu("settingslanguage", e_menu.LIST, dx, dy, dw, ui_large_height, setting_language_filename, text_get("filelanguage"), null, false, null, null, text_get("filelocale"), null, null)
 	tab_next()
 	
 	tab_control(24)
@@ -67,7 +67,7 @@ function tab_settings_interface()
 		if (!setting_interface_scale_auto)
 		{
 			tab_control_meter()
-			draw_button_menu("settingsinterfacescale", e_menu.LIST, dx, dy, dw, 24, setting_interface_scale, string(setting_interface_scale * 100) + "%", action_setting_interface_scale)
+			draw_button_menu("settingsinterfacescale", e_menu.LIST, dx, dy, dw, ui_large_height, setting_interface_scale, string(setting_interface_scale * 100) + "%", action_setting_interface_scale)
 			tab_next()
 		}
 	}

@@ -57,6 +57,26 @@ namespace CppProject
 
 		// Upload data from QImage
 		D3DContext->UpdateSubresource(d3dTex, 0, nullptr, imgBits, texDesc.Width * 4, texDesc.Width * texDesc.Height * 4);
+
+		width = texDesc.Width;
+		height = texDesc.Height;
+	}
+
+	bool Texture::UpdateSubImage(const QImage& img, QPoint pos)
+	{
+		if (!d3dTex || pos.x() < 0 || pos.y() < 0 || pos.x() + img.width() > width || pos.y() + img.height() > height)
+			return false;
+
+		D3D11_BOX box = {};
+		box.left = pos.x();
+		box.top = pos.y();
+		box.front = 0;
+		box.right = pos.x() + img.width();
+		box.bottom = pos.y() + img.height();
+		box.back = 1;
+		D3DContext->UpdateSubresource(d3dTex, 0, &box, img.constBits(), img.width() * 4, img.width() * img.height() * 4);
+
+		return true;
 	}
 
 	Texture::~Texture()
@@ -97,6 +117,9 @@ namespace CppProject
 		GL_CHECK_ERROR();
 
 		delete[] data;
+
+		width = img.width();
+		height = img.height();
 	}
 
 	Texture::~Texture()
@@ -105,6 +128,29 @@ namespace CppProject
 		GL_CHECK_ERROR();
 
 		hasMipMaps.remove(glTexId);
+	}
+
+	bool Texture::UpdateSubImage(const QImage& img, QPoint pos)
+	{
+		if (!glTexId || pos.x() < 0 || pos.y() < 0 || pos.x() + img.width() > width || pos.y() + img.height() > height)
+			return false;
+
+		// Same vertical flip as the constructor, but offset into the flipped destination
+		// range this sub-rect maps to within the full (already-flipped) texture.
+		IntType rowSize = img.width() * 4;
+		GLubyte* data = new GLubyte[rowSize * img.height()];
+		for (IntType y = 0; y < img.height(); y++)
+			memcpy(data + rowSize * y, img.scanLine(img.height() - 1 - y), rowSize);
+
+		IntType flippedY = height - pos.y() - img.height();
+
+		GFX->glBindTexture(GL_TEXTURE_2D, glTexId);
+		GFX->glTexSubImage2D(GL_TEXTURE_2D, 0, pos.x(), flippedY, img.width(), img.height(), GL_RGBA, GL_UNSIGNED_BYTE, data);
+		GFX->glBindTexture(GL_TEXTURE_2D, 0);
+		GL_CHECK_ERROR();
+
+		delete[] data;
+		return true;
 	}
 
 	IntType Texture::GetId()

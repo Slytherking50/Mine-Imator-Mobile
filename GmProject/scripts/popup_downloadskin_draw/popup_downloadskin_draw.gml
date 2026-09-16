@@ -4,7 +4,7 @@ function popup_downloadskin_draw()
 {
 	// Username input
 	tab_control_textfield()
-	draw_textfield("downloadskinusername", dx, dy, dw - 28, 24, popup.tbx_username, null)
+	draw_textfield("downloadskinusername", dx, dy, dw - 28, ui_touch_textfield_height, popup.tbx_username, null)
 	
 	// Download button
 	var download = keyboard_check_pressed(vk_enter);

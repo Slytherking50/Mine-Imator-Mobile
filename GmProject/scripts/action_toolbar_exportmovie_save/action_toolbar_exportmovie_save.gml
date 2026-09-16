@@ -38,7 +38,7 @@ function action_toolbar_exportmovie_save()
 		var fmt = popup_exportmovie.format;
 		if (fmt = "wmv")
 			fmt = "asf"
-		
+
 		log("Export movie", fn)
 		log("Format", exportmovie_format)
 		log("Bitrate", popup_exportmovie.bit_rate)
@@ -46,9 +46,21 @@ function action_toolbar_exportmovie_save()
 		log("Audio", yesno(popup_exportmovie.include_audio))
 		log("High Quality", yesno(exportmovie_high_quality))
 		log("Size", project_video_width, project_video_height)
-		
+
+		// Android: FFmpeg's own file I/O (avio_open, MovieLib.cpp) can't open a content://
+		// URI any more than QFile could - encode to a real local file instead and remember
+		// the real destination, copied onto it once movie_done() finishes
+		// (export_done_movie.gml). export_filename itself stays the picked URI (still shown
+		// to the user/toast correctly) - only the encoder's own target changes.
+		var encodefn = fn;
+		if (platform_get() == e_platform.ANDROID && string_pos("content://", fn) = 1)
+		{
+			export_filename_content_uri = fn
+			encodefn = temp_movie_file
+		}
+
 		movie_set(project_video_width, project_video_height, popup_exportmovie.bit_rate, exportmovie_framespersecond, popup_exportmovie.include_audio)
-		var err = movie_start(fn, fmt);
+		var err = movie_start(encodefn, fmt);
 		if (err < 0)
 		{
 			log("Error when exporting, error code", err)

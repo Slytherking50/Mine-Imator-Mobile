@@ -6,7 +6,9 @@
 
 #if API_OPENGL
 #include <QOpenGLShaderProgram>
+#ifndef Q_OS_ANDROID
 #include <QOpenGLFunctions_4_3_Core>
+#endif
 #endif
 #include <QVector4D>
 
@@ -216,7 +218,9 @@ namespace CppProject
 		static QString glslVersion;
 		static BoolType gl40Supported; // Required for textureQueryLod
 		static BoolType gl43Supported; // Required for SSBO
+	#ifndef Q_OS_ANDROID
 		static QOpenGLFunctions_4_3_Core* gl43Core;
+	#endif
 	#endif
 	};
 }

@@ -2,6 +2,82 @@
 
 #include "Generated/GmlFunc.hpp"
 
+#if defined(Q_OS_ANDROID)
+#include <private/qjni_p.h>
+#include <private/qjnihelpers_p.h>
+
+namespace
+{
+	// Write-side mirror of FileFunc.cpp's android_resolve_content_uri (2026-09-15) - same
+	// "content://" gap, opposite direction: QFile can't write a picked SAVE destination
+	// either, silently failing Buffer::Save() below for every JSON-backed single-file export
+	// that goes through it (object/particles/keyframes/render settings, and project saves
+	// once they resolve to a real local path - the project-FOLDER picker is a separate,
+	// bigger gap, not this one). Duplicated rather than shared with FileFunc.cpp's copy since
+	// Qt's own androidcontentfileengine.cpp duplicates this same small helper privately too,
+	// and introducing a shared header across two otherwise-unrelated translation units wasn't
+	// worth it for ~15 lines.
+	class JniExceptionCleaner
+	{
+	public:
+		JniExceptionCleaner() { clearException(); }
+		~JniExceptionCleaner() { clearException(); }
+
+		bool clean() { return clearException(); }
+	private:
+		bool clearException()
+		{
+			QJNIEnvironmentPrivate env;
+			if (env->ExceptionCheck())
+			{
+				env->ExceptionDescribe();
+				env->ExceptionClear();
+				return true;
+			}
+			return false;
+		}
+	};
+
+	bool WriteBytesToAndroidContentUri(const QString& uriStr, const char* bytes, qint64 size)
+	{
+		JniExceptionCleaner exceptionCleaner;
+
+		QJNIObjectPrivate juri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(uriStr).object());
+
+		if (!juri.isValid())
+			return false;
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		// "wt": write + truncate - a save always replaces the destination's full contents.
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			juri.object(), QJNIObjectPrivate::fromString("wt").object());
+
+		if (exceptionCleaner.clean() || !pfd.isValid())
+			return false;
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+			return false;
+
+		QFile out;
+		bool ok = false;
+		if (out.open(fd, QFile::WriteOnly | QFile::Truncate, QFile::DontCloseHandle))
+		{
+			ok = (out.write(bytes, size) == size);
+			out.close();
+		}
+
+		pfd.callMethod<void>("close");
+		return ok;
+	}
+}
+#endif
+
 namespace CppProject
 {
 	Buffer::Buffer(StringType filename) : Asset(ID_Buffer)
@@ -151,6 +227,14 @@ namespace CppProject
 
 	void Buffer::Save(StringType filename)
 	{
+#if defined(Q_OS_ANDROID)
+		if (filename.StartsWith("content://"))
+		{
+			if (!WriteBytesToAndroidContentUri(filename.QStr(), (char*)data.Data(), data.Size()))
+				WARNING("Could not save buffer to content URI " + filename.QStr());
+			return;
+		}
+#endif
 		QFile file(filename);
 		AddPerms(file);
 		if (file.open(QFile::WriteOnly))

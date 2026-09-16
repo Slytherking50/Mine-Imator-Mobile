@@ -28,6 +28,12 @@ function app_startup_interface()
 		
 	// Start server request for new assets
 	http_assets = http_get(link_assets_versions)
+
+	// Android auto-update (2026-09-15) - checks the GitHub repo's latest release on every
+	// startup, same fire-and-forget pattern as the assets check right above. Desktop-only
+	// distribution doesn't have an equivalent yet, so this stays Android-specific.
+	if (platform_get() == e_platform.ANDROID)
+		http_check_update = http_get(link_update_check)
 	
 	// Shortcut to a new project
 	if (dev_mode)

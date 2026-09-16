@@ -93,7 +93,7 @@ function tab_template_editor_particles()
 		}
 		
 		tab_control_menu()
-		draw_button_menu("particleeditorspawnregiontype", e_menu.LIST, dx, dy, dw, 24, temp_edit.pc_spawn_region_type, text_get("particleeditorspawnregiontype" + temp_edit.pc_spawn_region_type), action_lib_pc_spawn_region_type, false, null, icon)
+		draw_button_menu("particleeditorspawnregiontype", e_menu.LIST, dx, dy, dw, ui_large_height, temp_edit.pc_spawn_region_type, text_get("particleeditorspawnregiontype" + temp_edit.pc_spawn_region_type), action_lib_pc_spawn_region_type, false, null, icon)
 		tab_next()
 		
 		switch (temp_edit.pc_spawn_region_type)
@@ -142,7 +142,7 @@ function tab_template_editor_particles()
 					name = text_get("listnone")
 				
 				tab_control_menu()
-				draw_button_menu("particleeditorspawnregionpath", e_menu.LIST, dx, dy, dw, 24, temp_edit.pc_spawn_region_path, name, action_lib_pc_spawn_region_path)
+				draw_button_menu("particleeditorspawnregionpath", e_menu.LIST, dx, dy, dw, ui_large_height, temp_edit.pc_spawn_region_path, name, action_lib_pc_spawn_region_path)
 				tab_next()
 				
 				tab_control_dragger()
@@ -159,7 +159,7 @@ function tab_template_editor_particles()
 	
 	// Bounding box
 	tab_control_menu()
-	draw_button_menu("particleeditorboundingbox", e_menu.LIST, dx, dy, dw, 24, temp_edit.pc_bounding_box_type, text_get("particleeditorboundingboxtype" + temp_edit.pc_bounding_box_type), action_lib_pc_bounding_box_type)
+	draw_button_menu("particleeditorboundingbox", e_menu.LIST, dx, dy, dw, ui_large_height, temp_edit.pc_bounding_box_type, text_get("particleeditorboundingboxtype" + temp_edit.pc_bounding_box_type), action_lib_pc_bounding_box_type)
 	tab_next()
 	
 	if (temp_edit.pc_bounding_box_type = "ground")
@@ -300,7 +300,7 @@ function tab_template_editor_particles()
 	tab.tbx_type_name.text = ptype_edit.name
 	
 	tab_control_dragger()
-	draw_textfield("particleeditortypename", dx, dy, dw, 24, tab.tbx_type_name, action_lib_pc_type_name, "", "left")
+	draw_textfield("particleeditortypename", dx, dy, dw, ui_touch_textfield_height, tab.tbx_type_name, action_lib_pc_type_name, "", "left")
 	tab_next()
 	
 	// Spawn rate
@@ -320,7 +320,7 @@ function tab_template_editor_particles()
 	if (ptype_edit.temp)
 		text = ptype_edit.temp.display_name
 	
-	draw_button_menu("particleeditortypetemp", e_menu.LIST, dx, dy, dw, 24, ptype_edit.temp, text, action_lib_pc_type_temp)
+	draw_button_menu("particleeditortypetemp", e_menu.LIST, dx, dy, dw, ui_large_height, ptype_edit.temp, text, action_lib_pc_type_temp)
 	tab_next()
 	
 	// Sprite
@@ -373,7 +373,7 @@ function tab_template_editor_particles()
 			
 			// Template
 			tab_control_menu()
-			draw_button_menu("particleeditortypespritetemplate", e_menu.LIST, dx, dy, dw, 24, ptype_edit.sprite_template, text_get("particleeditortypespritetemplate" + ptype_edit.sprite_template), action_lib_pc_type_sprite_template, false)
+			draw_button_menu("particleeditortypespritetemplate", e_menu.LIST, dx, dy, dw, ui_large_height, ptype_edit.sprite_template, text_get("particleeditortypespritetemplate" + ptype_edit.sprite_template), action_lib_pc_type_sprite_template, false)
 			tab_next()
 			
 			// Still frame

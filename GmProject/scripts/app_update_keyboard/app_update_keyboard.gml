@@ -260,7 +260,23 @@ function app_update_keyboard()
 		if (window_busy = "")
 			window_focus = ""
 	}
-	
+
+	// Virtual keyboard (Android) - KNOWN_ISSUES.md B20, investigated 2026-09-09, implemented
+	// here. textbox_isediting is already the single, reliable "is some textbox focused right
+	// now" signal (set true in textbox_draw.gml every frame a field has window_focus, reset
+	// false above the frame after none respond) - comparing it against last frame's value is
+	// the edge detector, so show()/hide() fire exactly once per transition instead of every
+	// frame. Desktop has a physical keyboard and never calls these (keyboard_virtual_show/hide
+	// are no-ops there, UtilFunc.cpp).
+	if (textbox_isediting != textbox_isediting_prev)
+	{
+		if (textbox_isediting)
+			keyboard_virtual_show()
+		else
+			keyboard_virtual_hide()
+	}
+	textbox_isediting_prev = textbox_isediting
+
 	textbox_isediting_respond = false
 	
 	// Dragger changes

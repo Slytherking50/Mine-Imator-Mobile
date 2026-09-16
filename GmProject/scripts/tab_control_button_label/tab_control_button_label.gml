@@ -2,5 +2,5 @@
 
 function tab_control_button_label()
 {
-	tab_control(32)
+	tab_control(ui_large_height)
 }

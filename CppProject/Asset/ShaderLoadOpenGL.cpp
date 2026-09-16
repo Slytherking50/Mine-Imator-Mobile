@@ -1,6 +1,9 @@
 #if API_OPENGL
+#ifndef Q_OS_ANDROID
+// See Shader.cpp for why this is excluded on Android (GLclampd doesn't exist in ES headers).
 #undef __glext_h_
 #include <qopenglext.h>
+#endif
 
 #include "Shader.hpp"
 #include "Render/GraphicsApiHandler.hpp"
@@ -94,11 +97,46 @@ namespace CppProject
 				header += "in uint _aNormal;\n"
 					"in uint _aColor;\n"
 					"in uint _aData;\n"
-					"in uint _aTangent;\n"
-					"vec3 in_Normal = " UNPACK_VERTEX_NORMAL("_aNormal") ";\n"
+					"in uint _aTangent;\n";
+
+			#ifdef Q_OS_ANDROID
+				// GLSL ES forbids non-const global initializers - desktop GLSL allows a
+				// global's initializer to reference another global/attribute (which is what
+				// the #else branch below does), ES doesn't. Confirmed 2026-09-08 on a real
+				// device: "ERROR: '_aTangent' : Only consts can be used in a global
+				// initializer" for every VERTEX_BUFFER-format shader.
+				//
+				// First attempt - moving these to LOCAL declarations inside main() - also
+				// failed: some shaders (e.g. shader_replace.vsh) call helper functions
+				// (getWind(), defined above main()) that reference in_Wave etc. directly as
+				// globals; a main()-local declaration is invisible to them ("undeclared
+				// identifier: in_Wave", also confirmed on-device). Fix: keep them as globals,
+				// but WITHOUT an initializer (legal in ES - only initializer expressions must
+				// be const, a bare declaration isn't one), then ASSIGN their real value as
+				// the first statement inside main() - a plain assignment isn't a "global
+				// initializer" either, and by the time any helper function actually runs
+				// (they're only ever called from within main(), never before it), the
+				// assignment has already happened.
+				header += "vec3 in_Normal;\n"
+					"vec4 in_Colour;\n"
+					"vec4 in_Wave;\n"
+					"vec3 in_Tangent;\n";
+
+				QString unpackAssignments =
+					"in_Normal = " UNPACK_VERTEX_NORMAL("_aNormal") ";\n"
+					"in_Colour = " UNPACK_VERTEX_COLOR("_aColor") ";\n"
+					"in_Wave = " UNPACK_VERTEX_WAVE("_aData") ";\n"
+					"in_Tangent = " UNPACK_VERTEX_NORMAL("_aTangent") ";\n";
+				QRegularExpression mainRe("void\\s+main\\s*\\(\\s*\\)\\s*\\{");
+				QRegularExpressionMatch mainMatch = mainRe.match(code);
+				if (mainMatch.hasMatch())
+					code.insert(mainMatch.capturedEnd(), "\n" + unpackAssignments);
+			#else
+				header += "vec3 in_Normal = " UNPACK_VERTEX_NORMAL("_aNormal") ";\n"
 					"vec4 in_Colour = " UNPACK_VERTEX_COLOR("_aColor") ";\n"
 					"vec4 in_Wave = " UNPACK_VERTEX_WAVE("_aData") ";\n"
 					"vec3 in_Tangent = " UNPACK_VERTEX_NORMAL("_aTangent") ";\n";
+			#endif
 			}
 
 			if (useBatching)
@@ -164,7 +202,32 @@ namespace CppProject
 
 		// Add defines
 		QString defines = "#version " + glslVersion + "\n";
+	#ifndef Q_OS_ANDROID
+		// GL_ARB_* is desktop-only extension naming (ARB = desktop OpenGL's Architecture
+		// Review Board) - meaningless on ES, which doesn't have this extension under any
+		// name. Not needed there anyway: explicit attribute locations (layout(location=N))
+		// are already core in GLSL ES 3.00+, the version Android requests (Shader.cpp Init()).
 		defines += "#extension GL_ARB_explicit_attrib_location : enable\n";
+	#else
+		// GLSL ES 3.00 spec (4.5.3): fragment shaders have NO default precision for float/
+		// int/sampler types - a spec-compliant compiler must reject any fragment shader
+		// that uses them without either a precision statement or a per-declaration
+		// qualifier. None of this project's 53 shaders (GmProject's GameMaker-dialect ones
+		// nor the 6 C++-only ones) have ever had a precision qualifier anywhere (confirmed
+		// 2026-09-09, Fase 2 code audit) - the desktop GLSL dialect they're written in has
+		// no such concept. That they compile at all on the one real device tested so far
+		// (Adreno 610) only proves that THIS driver is lenient enough to supply an implicit
+		// default - not that every ES driver is. Qt's own portability shim
+		// (QOpenGLShaderProgram::addShaderFromSourceCode, qopenglshaderprogram.cpp) only
+		// strips highp/mediump/lowp qualifiers for DESKTOP GL; it injects no default
+		// precision statement for ES, so nothing upstream of this covers the gap either.
+		// Making it explicit (highp, matching desktop GLSL's implicit full-float
+		// precision) costs nothing on a lenient driver and is the only thing that can
+		// prevent an outright compile failure on a strict one - not yet verified against
+		// real hardware beyond the Adreno 610 already confirmed working, since none of the
+		// other two reference devices (CLAUDE.md §14.2) exist yet.
+		defines += "precision highp float;\nprecision highp int;\n";
+	#endif
 
 		// Add UvRect & TexRepeat uniform
 		if (numSamplers > 0)
@@ -258,8 +321,9 @@ namespace CppProject
 			GFX->glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 			GL_CHECK_ERROR();
 
-			// Get block index
-			glSsboBlockIndex = gl43Core->glGetProgramResourceIndex(program->programId(), GL_SHADER_STORAGE_BLOCK, "_ssbo");
+			// Get block index (glGetProgramResourceIndex exists in ES 3.1 via QOpenGLExtraFunctions,
+			// unlike glShaderStorageBlockBinding - no gl43Core needed here, see CLAUDE.md §5.1.1)
+			glSsboBlockIndex = GFX->glGetProgramResourceIndex(program->programId(), GL_SHADER_STORAGE_BLOCK, "_ssbo");
 		}
 
 		program->release();

@@ -201,5 +201,29 @@ namespace CppProject
 					num += frame->MoveToTexturePage() ? 1 : 0;
 
 		tmr.Print("Moved " + NumStr(num) + " sprites to texture pages");
+
+	#if API_OPENGL
+		// Force the GPU to fully finish everything queued up during the bulk asset load (a large
+		// Minecraft pack does thousands of texture uploads/surface renders/readbacks in this same
+		// burst) before returning to normal UI rendering. Confirmed on at least one Android
+		// GPU/driver (Adreno 610): without this, PRIMARY-style button text renders corrupted
+		// (solid white, ignoring glyph alpha) specifically after loading a large pack - see
+		// KNOWN_ISSUES.md. Not needed on desktop (D3D11), where this was never reproduced.
+		GFX->glFinish();
+
+		// The block/item texture sheets built during this load (res_load_pack_block_sheet.gml)
+		// render into offscreen surfaces and, for any block with real transparency (glass,
+		// leaves, ...), use a non-default separate RGB/alpha blend function
+		// (gpu_set_blendmode_ext_sepalpha) while doing so. Invalidate our cached blend state and
+		// force a genuine glBlendFuncSeparate reissue back to normal here, in case switching
+		// render targets on this GPU/driver doesn't restore blend state the way the spec says it
+		// should - untested in isolation, but this is the only place in the whole load that uses
+		// a non-standard blend mode at all.
+		GFX->blendSrcFactor = -1;
+		GFX->blendDstFactor = -1;
+		GFX->blendAlphaSrcFactor = -1;
+		GFX->blendAlphaDstFactor = -1;
+		gpu_set_blendmode(bm_normal);
+	#endif
 	}
 }

@@ -24,11 +24,21 @@ namespace CppProject
 		// Saves all texture pages for debugging purposes.
 		static void Debug();
 
+		// Marks every texture page that exists right now as sealed, so Add() will never place
+		// further content on them and always starts fresh page(s) instead. Called once, right
+		// after the app's own built-in UI sprites/fonts have been loaded (AppHandler::LoadResources,
+		// before the GML app loop and any project/Minecraft asset loading starts). This keeps
+		// bulk, highly variable content (a Minecraft asset pack can be a couple hundred sprites or
+		// several thousand) from ever sharing a page with UI text - see KNOWN_ISSUES.md for the
+		// Android GPU/driver corruption this was isolating against.
+		static void SealAll();
+
 		IntType size;
 		QImage image;
 		Texture* texture = nullptr;
 		TexturePageLocation* defaultLocation = nullptr;
 		QVector<QRect> rects;
+		BoolType sealed = false;
 
 		// Stores the last spot an image with a size was placed
 		struct LastFreeKey

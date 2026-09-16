@@ -221,13 +221,13 @@ function window_draw_world_import()
 	// World
 	dw = 256
 	capwid = 50
-	draw_button_menu("worldimportworld", e_menu.LIST, dx, dy, dw, 24, world_import_world_root, world_import_world_name, world_import_select_world, false, null, null, "", null, null, capwid)
+	draw_button_menu("worldimportworld", e_menu.LIST, dx, dy, dw, ui_large_height, world_import_world_root, world_import_world_name, world_import_select_world, false, null, null, "", null, null, capwid)
 	
 	// Dimension
 	dx += dw + spacing
 	dw = 208
 	capwid = 80
-	draw_button_menu("worldimportdimension", e_menu.LIST, dx, dy, dw, 24, world_import_dimension, text_get("worldimport" + world_import_dimension), world_import_select_dimension, false, null, null, "", null, null, capwid)
+	draw_button_menu("worldimportdimension", e_menu.LIST, dx, dy, dw, ui_large_height, world_import_dimension, text_get("worldimport" + world_import_dimension), world_import_select_dimension, false, null, null, "", null, null, capwid)
 	
 	dx += dw
 	

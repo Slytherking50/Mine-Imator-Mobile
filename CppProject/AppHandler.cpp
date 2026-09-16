@@ -18,6 +18,7 @@
 #include <QJsonObject>
 #include <QMessageBox>
 #include <QNetworkInterface>
+#include <QScreen>
 #include <QStyle>
 #include <QTimer>
 #include <QStandardPaths>
@@ -138,6 +139,22 @@ namespace CppProject
 			keyMap[Qt::Key_End] = vk_end;
 			keyMap[Qt::Key_Return] = keyMap[Qt::Key_Enter] = vk_enter;
 			keyMap[Qt::Key_Escape] = vk_escape;
+		#ifdef Q_OS_ANDROID
+			// Android's system Back button/gesture arrives as a real QKeyEvent with
+			// Qt::Key_Back (confirmed - not the same constant as Key_Escape), but nothing in
+			// this project ever mapped it, and KeyChecker::keyPressEvent (AppWindow.cpp)
+			// unconditionally calls event->ignore() for every key - so an unhandled Key_Back
+			// propagates up and hits Qt's own default Android behavior, which is to finish the
+			// Activity (exit the app). This maps it onto the SAME vk_escape GML already polls
+			// everywhere (popup_close, export cancel, menu escape) so those existing handlers
+			// react to it for free. Found 2026-09-16 while auditing keyboard shortcuts for
+			// touch equivalents - never noticed before because nobody had pressed physical/
+			// gesture Back with a popup open during a verified test session. Still unverified
+			// on-device whether GML closing the popup this way also prevents Qt's own
+			// unhandled-Key_Back exit from firing in the same press (KeyChecker still calls
+			// ignore() unconditionally) - needs a real device test, not just compilation.
+			keyMap[Qt::Key_Back] = vk_escape;
+		#endif
 			keyMap[Qt::Key_F1] = vk_f1;
 			keyMap[Qt::Key_F2] = vk_f2;
 			keyMap[Qt::Key_F3] = vk_f3;
@@ -238,6 +255,11 @@ namespace CppProject
 		Shader::Init();
 		Asset::Load();
 
+		// From here on, the GML app loop (and whatever project/Minecraft asset pack it loads)
+		// gets its own texture page(s), never sharing one with the app's own UI sprites/fonts
+		// loaded just above - see TexturePage::SealAll().
+		TexturePage::SealAll();
+
 		// GPU settings
 		gpu_set_blendenable(true);
 		gpu_set_blendmode(bm_normal);
@@ -263,8 +285,44 @@ namespace CppProject
 			mainWindow = win;
 
 		if (rect == QRect()) // Show minimized if no rect given
+		{
+		#ifdef Q_OS_ANDROID
+			// This is the actual call that shows the MAIN window at startup (AddWindow() is
+			// called bare, no rect, for it) - showFullScreen() hides the system status bar
+			// via Qt's own Android platform layer, no custom Java needed. Reapplied
+			// 2026-09-09 at explicit user request ("saca la hora").
+			win->showFullScreen();
+			// TRIED (2026-09-09) and REVERTED: win->setGeometry(qApp->primaryScreen()->
+			// geometry()) right after showFullScreen(), to close a thin gap left at the
+			// top. Confirmed on a real device this backfires badly on this MIUI build -
+			// the explicit setGeometry() call right after showFullScreen() gets
+			// reinterpreted as a request for MIUI's floating-window mode instead: the app
+			// shrinks to a small window over the home screen wallpaper, status bar back
+			// and all. Do not reintroduce without testing on-device again.
+		#else
 			win->showMinimized();
-		
+		#endif
+		}
+
+	#ifdef Q_OS_ANDROID
+		// Secondary windows (popups, the color picker, secondary editor windows) used
+		// setGeometry() with desktop-relative coordinates/sizes unconditionally here - on
+		// Android that creates a small floating window positioned by desktop multi-window
+		// math that means nothing on a single fullscreen Activity, showing the home screen
+		// wallpaper/black background around and sometimes past the visible screen edges
+		// (confirmed by user report, 2026-09-09: "franjas negras... ventanas mal
+		// posicionadas... textos que no se vean"). Only the bare-rect main-window case
+		// (above) had an Android branch before this. Full B12 fix (CLAUDE.md §8, "colapsar
+		// a una ventana + navegación") is a real redesign for later - this is the immediate,
+		// low-risk stopgap: every secondary window goes fullscreen instead of floating, same
+		// safe showFullScreen() mechanism already used for the main window, not the
+		// setGeometry-after-showFullScreen combination that broke MIUI's floating-window
+		// detection (see the comment above on the bare-rect case).
+		else
+		{
+			win->showFullScreen();
+		}
+	#else
 		else if (from) // Show relative to a window
 		{
 			win->setGeometry(from->x() + rect.x(), from->y() + rect.y() + QApplication::style()->pixelMetric(QStyle::PM_TitleBarHeight) + 4, rect.width(), rect.height());
@@ -275,6 +333,7 @@ namespace CppProject
 			win->setGeometry(rect);
 			win->ShowNormal();
 		}
+	#endif
 
 		win->UpdateSize();
 		return win;
@@ -320,11 +379,32 @@ namespace CppProject
 			if (!GFX->StartOffScreenRender())
 				continue;
 			GFX->surface = win->GetSurface();
+			// KI-1 (KNOWN_ISSUES.md, 2026-09-09) - re-applied 2026-09-16, then REVERTED again
+			// same session: caused a real, visible regression (popup/UI layout cut off and
+			// rescaled - "New Project" dialog and the Android loading screen both overflowing
+			// past the screen edge, confirmed via screenshot on the reference device). Root
+			// cause of the revert-worthiness: several OTHER Android-specific scale patches
+			// (B27 second pass, bench_draw.gml/window_draw_startup.gml corrections, and KI-2's
+			// entire custom Android loading-screen redesign) all landed AFTER this fix was
+			// reverted on 2026-09-09 and were tuned/verified against its ABSENCE - reapplying it
+			// blind, without re-testing against everything built since, was premature. Back to
+			// the known-working (if imperfect) behavior; if this is revisited, it needs to be
+			// re-verified against the full current Android UI, not just the original 2026-09-09
+			// loading-screen repro.
 			GFX->surface->BeginUse(win->size());
 
 			GFX->ClearDepth();
 			GFX->shader = PR->GetShader();
-			GFX->shader->BeginUse();
+			// BeginUse()'s bool return was silently ignored at every call site in the project
+			// (here and RenderFunc.cpp/GLWidget.cpp) - if QOpenGLShaderProgram::bind() ever
+			// fails, every draw call for the rest of the frame runs against whatever program
+			// (if any) was actually left bound in GL, not the one GFX->shader/attributeLocation[]
+			// assume. Matches a real INVALID_OPERATION burst seen in a device log.txt
+			// (SubmitVertices/SetAttributes) right as a popup opened over the viewport - root
+			// cause of why bind() failed there is still unconfirmed, this only makes a failure
+			// visible instead of silent (2026-09-16).
+			if (!GFX->shader->BeginUse())
+				DEBUG("[WARNING] Shader::BeginUse() failed in main render loop - GL program not bound, this frame's drawing is likely corrupted");
 			
 			// Run application
 			try
@@ -362,6 +442,9 @@ namespace CppProject
 				GFX->surface->EndUse();
 
 			win->mouseWheel = 0;
+			win->touchPinchDelta = 0;
+			win->touchPanDx = 0;
+			win->touchPanDy = 0;
 			win->mouseLastPos = win->mousePos;
 			if (win->mouseUnlock)
 				win->mouseLocked = win->mouseUnlock = false;
@@ -406,6 +489,19 @@ namespace CppProject
 
 			gmlGlobal::fps = std::clamp(gmlGlobal::fps_real, IntType(0), gmlGlobal::room_speed);
 			fpsLastUpdate = QDateTime::currentDateTime();
+
+#if defined(Q_OS_ANDROID)
+			// Fase 6 (2026-09-15), CLAUDE.md §14.3 "30 fps interactivos" - dumpsys gfxinfo
+			// isn't useful here (it tracks Android's own View/SurfaceFlinger compositor frame
+			// submissions for this Activity's single GL surface, not Qt's internal render
+			// loop inside it - confirmed live: it showed "Total frames rendered: 5" after
+			// minutes of continuous 3D rendering). This is the engine's own real fps counter,
+			// already computed once/second above for other purposes - just logging it too, so
+			// it's readable from log.txt (already the established measurement channel this
+			// session, PERF_LOG.md) while the user interacts, instead of needing yet another
+			// on-device measurement mechanism.
+			DEBUG("fps: " + NumStr(gmlGlobal::fps));
+#endif
 
 			// Clean unused data
 			VecType::CleanHeapData();

@@ -13,7 +13,7 @@ function tab_settings_program()
 	
 	// Minecraft assets version
 	tab_control_menu()
-	draw_button_menu("settingsminecraftversion", e_menu.LIST, dx, dy, dw, 24, setting_minecraft_assets_version, setting_minecraft_assets_version, action_setting_minecraft_assets_version, false, null, null, "", c_white, c_white)
+	draw_button_menu("settingsminecraftversion", e_menu.LIST, dx, dy, dw, ui_large_height, setting_minecraft_assets_version, setting_minecraft_assets_version, action_setting_minecraft_assets_version, false, null, null, "", c_white, c_white)
 	tab_next()
 	
 	// Backups

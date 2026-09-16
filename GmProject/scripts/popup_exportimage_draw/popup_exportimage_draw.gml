@@ -9,7 +9,7 @@ function popup_exportimage_draw()
 		text = text_get("projectvideosizetemplate" + project_video_template.name) + " (" + string(project_video_template.width) + "x" + string(project_video_template.height) + ")"
 	
 	tab_control_menu()
-	draw_button_menu("exportimageimagesize", e_menu.LIST, dx, dy, dw, 24, project_video_template, text, action_project_video_template)
+	draw_button_menu("exportimageimagesize", e_menu.LIST, dx, dy, dw, ui_large_height, project_video_template, text, action_project_video_template)
 	tab_next()
 	
 	// Custom

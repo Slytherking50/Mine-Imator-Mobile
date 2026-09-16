@@ -49,7 +49,7 @@ function tab_properties_resources()
 		capwid = text_caption_width("resourcespackimage", "resourcespackimagecharacter", "resourcespackimagecolormap", "resourcespackimageparticles")
 		
 		tab_control_menu()
-		draw_button_menu("resourcespackimage", e_menu.LIST, dx, dy, dw, 24, res_preview.pack_image, text_get("resourcespack" + res_preview.pack_image), action_res_preview_pack_image, false)
+		draw_button_menu("resourcespackimage", e_menu.LIST, dx, dy, dw, ui_large_height, res_preview.pack_image, text_get("resourcespack" + res_preview.pack_image), action_res_preview_pack_image, false)
 		tab_next()
 		
 		switch (res_preview.pack_image)
@@ -57,11 +57,11 @@ function tab_properties_resources()
 			case "modeltextures":
 			{
 				tab_control_menu()
-				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, 24, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
+				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, ui_large_height, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
 				tab_next()
 				
 				tab_control_menu()
-				draw_button_menu("resourcespackimagemodeltexture", e_menu.LIST, dx, dy, dw, 24, res_preview.pack_model_texture, res_preview.pack_model_texture, action_res_preview_pack_model_texture, false)
+				draw_button_menu("resourcespackimagemodeltexture", e_menu.LIST, dx, dy, dw, ui_large_height, res_preview.pack_model_texture, res_preview.pack_model_texture, action_res_preview_pack_model_texture, false)
 				tab_next()
 				break
 			}
@@ -69,7 +69,7 @@ function tab_properties_resources()
 			case "itemsheet":
 			{
 				tab_control_menu()
-				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, 24, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
+				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, ui_large_height, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
 				tab_next()
 				break
 			}
@@ -77,7 +77,7 @@ function tab_properties_resources()
 			case "blocksheet":
 			{
 				tab_control_menu()
-				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, 24, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
+				draw_button_menu("resourcespackmaterial", e_menu.LIST, dx, dy, dw, ui_large_height, res_preview.pack_image_material, text_get("resourcespackmaterial" + res_preview.pack_image_material), action_res_preview_pack_image_material, false)
 				tab_next()
 				
 				tab_control_togglebutton()
@@ -127,7 +127,7 @@ function tab_properties_resources()
 		if (res_edit.scenery_palette_size > 0)
 		{
 			tab_control_menu()
-			draw_button_menu("resourcesscenerystructurepalette", e_menu.LIST, dx, dy, dw, 24, res_edit.scenery_palette, text_get("resourcesscenerystructurepalettenumber", res_edit.scenery_palette + 1), action_res_scenery_palette)
+			draw_button_menu("resourcesscenerystructurepalette", e_menu.LIST, dx, dy, dw, ui_large_height, res_edit.scenery_palette, text_get("resourcesscenerystructurepalettenumber", res_edit.scenery_palette + 1), action_res_scenery_palette)
 			tab_next()
 		}
 		

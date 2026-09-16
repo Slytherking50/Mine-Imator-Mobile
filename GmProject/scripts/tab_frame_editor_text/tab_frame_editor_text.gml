@@ -13,7 +13,7 @@ function tab_frame_editor_text()
 		text = tl_edit.value[e_value.TEXT_FONT].display_name
 	
 	tab_control_menu()
-	draw_button_menu("frameeditortextfont", e_menu.LIST, dx, dy, dw, 24, tl_edit.value[e_value.TEXT_FONT], text, action_tl_frame_text_font)
+	draw_button_menu("frameeditortextfont", e_menu.LIST, dx, dy, dw, ui_large_height, tl_edit.value[e_value.TEXT_FONT], text, action_tl_frame_text_font)
 	tab_next()
 	
 	// Font Anti-aliasing

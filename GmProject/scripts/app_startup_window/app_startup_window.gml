@@ -18,6 +18,10 @@ function app_startup_window()
 	http_download_assets_zip = null
 	http_alert_news = null
 	http_downloadskin = null
+
+	// Android auto-update (2026-09-15)
+	http_check_update = null
+	http_download_update = null
 	
 	window_width = 1
 	window_height = 1
@@ -141,7 +145,54 @@ function app_startup_window()
 	ui_small_height = 24
 	window_compact = false
 	panel_compact = false
-	
+
+	// Virtual joystick (Android, Fase 4) - active-state fields, shared globally since only one
+	// view can ever be mid-interaction at a time (window_busy is itself a single global state
+	// machine). Screen position/radius used to live here too as bare globals, but that only
+	// ever supported ONE view having a joystick - the split-view "Cámara activa" panel showed
+	// no joystick at all when it was also in work-camera mode (2026-09-15 user report). Moved
+	// to view_main.joystick_screen_x/y/radius and view_second.joystick_screen_x/y/radius
+	// instead (app_startup_interface_views.gml), set every frame by view_draw.gml and read a
+	// frame later by view_update.gml's hit-test (draw always runs after update, so "last
+	// frame's position" is what's available there - the viewport practically never moves frame
+	// to frame, a 1-frame-stale hit region is not perceptible).
+	joystick_active = false
+	joystick_knob_x = 0
+	joystick_knob_y = 0
+	joystick_alpha = 0.35
+	joystick_slot = -1
+	joystick_look_tracking = false
+	joystick_look_prev_x = 0
+	joystick_look_prev_y = 0
+
+	// Virtual joystick (Android only, view_draw.gml/camera_control_move.gml) - WASD has no
+	// touch equivalent (§6.4), this is the on-screen replacement for the work camera's free
+	// movement while looking around with a one-finger drag at the same time.
+	joystick_active = false
+	joystick_knob_x = 0
+	joystick_knob_y = 0
+	joystick_alpha = 0.35
+
+	// Android loading screen's own render+credit (window_draw_load_assets.gml, 2026-09-12) -
+	// deliberately separate from load_assets_splash/load_assets_credits (the desktop dialog's
+	// own splash, picked once in minecraft_assets_load_startup.gml at a different time for a
+	// different screen) - explicit user request: this screen's render shouldn't depend on
+	// that older variable/timing at all. Picked lazily, once, the first time this screen
+	// actually draws (android_load_render == null guards it) rather than here at startup,
+	// since irandom() needs randomize() to have already run (app_event_create.gml) and this
+	// script runs earlier than that.
+	android_load_render = null
+	android_load_render_credit = ""
+
+	// Android loading screen's own logo (window_draw_load_assets.gml, 2026-09-12 remake) -
+	// replaces spr_load_assets (the shared desktop/Android placeholder clapperboard) on
+	// this screen only, without touching spr_load_assets itself, which the desktop dialog
+	// below in the same script still draws. Loaded lazily like android_load_render above -
+	// no randomize() dependency here, but kept in the same lazy spot for consistency and
+	// because file_exists_lib()/data_directory need data_directory_seed_android() to have
+	// already run, which happens after this script too.
+	android_load_logo = null
+
 	// Set garbage collector
 	gc_target_frame_time(0)
 }

@@ -22,8 +22,12 @@ function draw_switch(name, xx, yy, active, script, tip = "", disabled = false)
 		return 0
 	
 	// Mouse
+	// Hitbox covers the whole row (label included), same as checkbox - not just the small
+	// switch graphic (switchx/switchy/16px-tall box) like before. Fase 3 (CLAUDE.md §6.2,
+	// inventario 0.8): tapping the label - most of the row's visual width - didn't activate
+	// anything, since the hitbox only covered the switch icon itself.
 	var mouseon, mouseclick;
-	mouseon = app_mouse_box(switchx, switchy, h, 16) && content_mouseon && !disabled
+	mouseon = app_mouse_box(xx, yy, w, h) && content_mouseon && !disabled
 	mouseclick = mouseon && mouse_left
 	
 	pressed = false

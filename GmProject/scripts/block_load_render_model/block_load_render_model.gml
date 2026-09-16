@@ -365,24 +365,50 @@ function block_load_render_model(model, rot, uvlock, opaque, wei, res = null)
 							
 							face_vbuffer[nd] = null
 							
+							// O(1) map lookups instead of ds_list_find_index() linear scans -
+							// same "first match, -1 if missing" semantics, see
+							// minecraft_assets_event_create.gml/minecraft_assets_load.gml
+							// (CLAUDE.md B21, this loop is the confirmed hot path). Not a
+							// ternary (slot = is_undefined(...) ? -1 : ...) - CppGen emits an
+							// ambiguous C++ conditional when one branch is IntType (-1) and
+							// the other is the VarType map lookup result; plain if/else avoids
+							// mixing the two in one expression.
 							if (opaque)
-								slot = ds_list_find_index(mc_assets.block_texture_list, texname + " opaque")
+							{
+								slot = mc_assets.block_texture_index_map[?texname + " opaque"]
+								if (is_undefined(slot)) slot = -1
+							}
 							if (slot < 0)
-								slot = ds_list_find_index(mc_assets.block_texture_list, texname + " noalpha")
+							{
+								slot = mc_assets.block_texture_index_map[?texname + " noalpha"]
+								if (is_undefined(slot)) slot = -1
+							}
 							if (slot < 0)
-								slot = ds_list_find_index(mc_assets.block_texture_list, texname)
-							
+							{
+								slot = mc_assets.block_texture_index_map[?texname]
+								if (is_undefined(slot)) slot = -1
+							}
+
 							if (slot < 0) // Not in static sheet, is it animated?
 							{
 								if (slot < 0)
-									slot = ds_list_find_index(mc_assets.block_texture_ani_list, texname)
-								
+								{
+									slot = mc_assets.block_texture_ani_index_map[?texname]
+									if (is_undefined(slot)) slot = -1
+								}
+
 								// Check for tags
 								if (slot < 0)
-									slot = ds_list_find_index(mc_assets.block_texture_list, texname + " noalpha")
-								
+								{
+									slot = mc_assets.block_texture_index_map[?texname + " noalpha"]
+									if (is_undefined(slot)) slot = -1
+								}
+
 								if (slot < 0)
-									slot = ds_list_find_index(mc_assets.block_texture_ani_list, texname + " opaque")
+								{
+									slot = mc_assets.block_texture_ani_index_map[?texname + " opaque"]
+									if (is_undefined(slot)) slot = -1
+								}
 								
 								if (slot < 0) // Missing texture, skip face
 								{

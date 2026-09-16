@@ -8,5 +8,5 @@ function tab_control_menu()
 	if (argument_count > 0)
 		tab_control(label + argument[0])
 	else
-		tab_control(label + 24)
+		tab_control(label + ui_small_height)
 }

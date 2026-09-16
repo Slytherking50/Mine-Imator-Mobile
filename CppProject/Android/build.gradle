@@ -1,0 +1,105 @@
+// Package source dir for androiddeployqt (QT_ANDROID_PACKAGE_SOURCE_DIR).
+// Based on the stock Qt 5.15.19 template, with three fixes the stock template needs against
+// what's actually installed on the build machine (SDK build-tools 34.0.0, platform android-34,
+// JDK 17 - see CLAUDE.md, Fase 1 CMake/packaging work):
+//   1. jcenter() is dead since 2024 - replaced with mavenCentral().
+//   2. AGP 7.0.2 doesn't support compileSdk 34 - bumped to 8.7.0, which is the version whose
+//      own published compatibility table matches this exact combination (Gradle 8.9,
+//      build-tools 34.0.0, JDK 17, NDK r27) - see gradle/wrapper/gradle-wrapper.properties
+//      alongside this file for the matching Gradle wrapper version.
+//   3. AGP 8.x requires an explicit `namespace` in this file - it no longer infers it from
+//      the manifest's `package` attribute (that inference path was removed, not just
+//      deprecated). Confirmed needed 2026-09-08: Gradle failed configuration with "Namespace
+//      not specified" before this was added. Matches AndroidManifest.xml's package attribute,
+//      itself a deliberate Fase 1 placeholder (CLAUDE.md §9.3/§9.5 naming constraint).
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.7.0'
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+apply plugin: 'com.android.application'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    // Auto-update (2026-09-15) - androidx.core.content.FileProvider, needed to hand a
+    // downloaded APK to Android's package installer as a content:// URI (a raw file:// path
+    // throws FileUriExposedException on API 24+). Nothing else in this app depends on
+    // AndroidX (the Qt shell here still uses org.qtproject.qt5.android.bindings.QtApplication,
+    // not an AndroidX-based Qt6 build) - this one artifact is added just for FileProvider.
+    implementation 'androidx.core:core:1.13.1'
+}
+
+android {
+    namespace 'org.internal.testbuild'
+
+    /*******************************************************
+     * The following variables:
+     * - androidBuildToolsVersion,
+     * - androidCompileSdkVersion
+     * - qt5AndroidDir - holds the path to qt android files
+     *                   needed to build any Qt application
+     *                   on Android.
+     *
+     * are defined in gradle.properties file. This file is
+     * updated by QtCreator and androiddeployqt tools.
+     * Changing them manually might break the compilation!
+     *******************************************************/
+
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
+    ndkVersion androidNdkVersion
+
+    // Extract native libraries from the APK
+    packagingOptions.jniLibs.useLegacyPackaging true
+
+    buildFeatures.aidl true
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']
+            aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
+            res.srcDirs = [qt5AndroidDir + '/res', 'res']
+            resources.srcDirs = ['resources']
+            renderscript.srcDirs = ['src']
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+       }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.incremental = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    // Do not compress Qt binary resources file
+    aaptOptions {
+        noCompress 'rcc'
+    }
+
+    defaultConfig {
+        resConfig "en"
+        minSdkVersion = qtMinSdkVersion
+        targetSdkVersion = qtTargetSdkVersion
+        ndk.abiFilters = qtTargetAbiList.split(",")
+    }
+}

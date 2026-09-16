@@ -5,6 +5,10 @@ function app_startup_interface_export()
 	export_surface = null
 	export_sample = 0
 	export_filename = ""
+	// Android video export only (2026-09-15) - holds the real picked content:// destination
+	// while movie_start() encodes to temp_movie_file instead (macros.gml); copied onto this
+	// URI once the encode finishes (export_done_movie.gml). Empty outside that window.
+	export_filename_content_uri = ""
 	export_escape_time = 0
 	
 	exportmovie_format = ""

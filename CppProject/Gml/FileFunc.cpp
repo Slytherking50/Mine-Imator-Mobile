@@ -5,9 +5,40 @@
 
 #include <QDirIterator>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QJsonParseError>
 #include <QJsonObject>
 #include <QJsonArray>
+
+#if defined(Q_OS_ANDROID)
+#include <private/qjni_p.h>
+#include <private/qjnihelpers_p.h>
+#include <QtCore/qcoreapplication.h>
+
+// Mirrors the same-named, non-exported helper in Qt's own
+// qtbase/src/plugins/platforms/android/androidcontentfileengine.cpp - not reusable from here
+// (platform plugin internal), so duplicated rather than pulled in some other way.
+class JniExceptionCleaner
+{
+public:
+	JniExceptionCleaner() { clearException(); }
+	~JniExceptionCleaner() { clearException(); }
+
+	bool clean() { return clearException(); }
+private:
+	bool clearException()
+	{
+		QJNIEnvironmentPrivate env;
+		if (env->ExceptionCheck())
+		{
+			env->ExceptionDescribe();
+			env->ExceptionClear();
+			return true;
+		}
+		return false;
+	}
+};
+#endif
 
 namespace CppProject
 {
@@ -132,19 +163,30 @@ namespace CppProject
 		return 0;
 	}
 
+	// Android content:// URIs (Android SAF dialog results, 2026-09-15) have no filesystem
+	// path/directory/suffix for QFileInfo to parse - it would just mangle the opaque document
+	// id instead. Every filename_* helper below passes one through unchanged rather than
+	// letting QFileInfo corrupt it; a content:// URI already carries the right name/extension
+	// on the document itself (set via the native picker), nothing here needs to re-derive it.
 	StringType filename_change_ext(StringType file, StringType newext)
 	{
+		if (file.StartsWith("content://"))
+			return file;
 		QFileInfo info(file);
 		return info.path() + "/" + info.completeBaseName() + newext;
 	}
 
 	StringType filename_dir(StringType file)
 	{
+		if (file.StartsWith("content://"))
+			return file;
 		return QFileInfo(file).path();
 	}
 
 	StringType filename_ext(StringType file)
 	{
+		if (file.StartsWith("content://"))
+			return "";
 		QString suffix = QFileInfo(file).suffix();
 		if (suffix.isEmpty())
 			return "";
@@ -153,11 +195,15 @@ namespace CppProject
 
 	StringType filename_name(StringType file)
 	{
+		if (file.StartsWith("content://"))
+			return file;
 		return QFileInfo(file).fileName();
 	}
 
 	StringType filename_path(StringType file)
 	{
+		if (file.StartsWith("content://"))
+			return file;
 		return QFileInfo(file).path() + "/";
 	}
 
@@ -203,6 +249,148 @@ namespace CppProject
 		return "";
 	}
 
+#if defined(Q_OS_ANDROID)
+	// QFileDialog's native Android picker (used below) is documented to return a "content://"
+	// URI, not a real filesystem path - Qt's own AndroidContentFileEngine is supposed to let
+	// QFile open those directly, but on this device/build it doesn't: QFile::open() on such a
+	// URI just fails, and json_load()/similar callers see it as a normal open failure -
+	// exactly the "corrupto"/"versión no compatible" the user hit opening BOTH a .miproject
+	// and a texture through "Abrir proyecto"/"Importar recurso" (2026-09-15, confirmed via
+	// log.txt: "Could not parse JSON file: content://com.android.providers.downloads.documents/
+	// document/342" - the raw URI string reaching json_load() unresolved). Rather than debug
+	// Qt's own broken path further, this bypasses it: resolve the URI ourselves via raw JNI
+	// (QJNIObjectPrivate/QtAndroidPrivate - part of QtCore's already-built Android platform
+	// support, NOT the separate QtAndroidExtras module confirmed missing from this Qt install,
+	// so no Qt rebuild needed) and copy its bytes into a real local file under
+	// user_directory_get(), then hand GML that ordinary path - every existing reader
+	// (json_load, sprite loading, etc.) keeps working completely unchanged. Read-side only
+	// (get_open_filename_ext) - the save side has a different, bigger gap (file_dialog_save_
+	// project uses the save dialog as a folder picker, which doesn't map onto SAF's per-file
+	// model at all) tracked separately, not fixed here.
+	StringType android_resolve_content_uri(StringType uriStr)
+	{
+		JniExceptionCleaner exceptionCleaner;
+		Q_UNUSED(exceptionCleaner);
+
+		QJNIObjectPrivate juri = QJNIObjectPrivate::callStaticObjectMethod(
+			"android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+			QJNIObjectPrivate::fromString(uriStr.QStr()).object());
+
+		if (!juri.isValid())
+		{
+			DEBUG("android_resolve_content_uri: Uri.parse failed for " + uriStr.QStr());
+			return "";
+		}
+
+		QJNIObjectPrivate contentResolver = QJNIObjectPrivate(QtAndroidPrivate::context())
+			.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
+
+		// Display name (OpenableColumns.DISPLAY_NAME) - the URI itself is an opaque numeric
+		// document id ("document/342"), no usable extension in it. Texture/model loading
+		// elsewhere in this codebase dispatches on file extension, so the local copy needs to
+		// keep the real one instead of inventing a generic ".tmp".
+		QString displayName = "content_import";
+		{
+			QJNIObjectPrivate cursor = contentResolver.callObjectMethod("query",
+				"(Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;",
+				juri.object(), nullptr, nullptr, nullptr, nullptr);
+
+			if (cursor.isValid() && cursor.callMethod<jboolean>("moveToFirst"))
+			{
+				jint nameCol = cursor.callMethod<jint>("getColumnIndex",
+					"(Ljava/lang/String;)I", QJNIObjectPrivate::fromString("_display_name").object());
+
+				if (nameCol >= 0)
+				{
+					QJNIObjectPrivate jname = cursor.callObjectMethod("getString", "(I)Ljava/lang/String;", nameCol);
+					if (jname.isValid())
+						displayName = jname.toString();
+				}
+			}
+
+			if (cursor.isValid())
+				cursor.callMethod<void>("close");
+		}
+
+		// Not every content provider's DISPLAY_NAME carries a real extension (confirmed
+		// against the Downloads provider on the reference device, never against others) -
+		// falls back to the literal "content_import" above, or some providers return a bare
+		// document id with no suffix at all. Since res_load()/new_res() (GmProject) and the
+		// image loaders under this dispatch by file extension, a missing one silently mis-
+		// detects the format instead of erroring cleanly (suspected contributor to B30, a
+		// skin-picker crash reported on a second Android device - unconfirmed without that
+		// device's log.txt, but this gap is real regardless of whether it's the exact cause).
+		// MIME type (ContentResolver.getType(), works for every provider, not just the ones
+		// that also populate DISPLAY_NAME) is the correct Android-native fallback source.
+		if (QFileInfo(displayName).suffix().isEmpty())
+		{
+			QJNIObjectPrivate jtype = contentResolver.callObjectMethod("getType",
+				"(Landroid/net/Uri;)Ljava/lang/String;", juri.object());
+			if (jtype.isValid())
+			{
+				QString mime = jtype.toString();
+				QString ext;
+				if (mime == "image/png") ext = "png";
+				else if (mime == "image/jpeg") ext = "jpg";
+				else if (mime == "application/zip" || mime == "application/x-zip-compressed") ext = "zip";
+
+				if (!ext.isEmpty())
+					displayName += "." + ext;
+			}
+		}
+
+		QJNIObjectPrivate pfd = contentResolver.callObjectMethod("openFileDescriptor",
+			"(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;",
+			juri.object(), QJNIObjectPrivate::fromString("r").object());
+
+		if (exceptionCleaner.clean())
+		{
+			DEBUG("android_resolve_content_uri: JNI exception opening " + uriStr.QStr());
+			return "";
+		}
+
+		if (!pfd.isValid())
+		{
+			DEBUG("android_resolve_content_uri: openFileDescriptor returned null for " + uriStr.QStr());
+			return "";
+		}
+
+		jint fd = pfd.callMethod<jint>("getFd", "()I");
+		if (fd < 0)
+		{
+			DEBUG("android_resolve_content_uri: invalid fd for " + uriStr.QStr());
+			return "";
+		}
+
+		QString localPath = user_directory_get().QStr() + "content_import_" + displayName;
+
+		QFile src;
+		if (!src.open(fd, QFile::ReadOnly, QFile::DontCloseHandle))
+		{
+			DEBUG("android_resolve_content_uri: could not wrap fd as QFile for " + uriStr.QStr());
+			pfd.callMethod<void>("close");
+			return "";
+		}
+
+		QByteArray bytes = src.readAll();
+		src.close();
+		pfd.callMethod<void>("close");
+
+		QFile dst(localPath);
+		if (!dst.open(QFile::WriteOnly | QFile::Truncate))
+		{
+			DEBUG("android_resolve_content_uri: could not write local copy " + localPath);
+			return "";
+		}
+		dst.write(bytes);
+		dst.close();
+
+		DEBUG("android_resolve_content_uri: copied " + uriStr.QStr() + " (" + QString::number(bytes.size()) + " bytes) -> " + localPath);
+
+		return StringType(localPath);
+	}
+#endif
+
 	StringType get_open_filename_ext(StringType filter, StringType file, StringType dir, StringType caption)
 	{
 		QFileDialog fd;
@@ -224,7 +412,14 @@ namespace CppProject
 
 		QStringList files = fd.selectedFiles();
 		if (files.size() > 0)
-			return files[0];
+		{
+			StringType picked = files[0];
+#if defined(Q_OS_ANDROID)
+			if (picked.StartsWith("content://"))
+				return android_resolve_content_uri(picked);
+#endif
+			return picked;
+		}
 		return "";
 	}
 

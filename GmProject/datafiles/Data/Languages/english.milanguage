@@ -211,6 +211,10 @@
 		"pan": "Pan view",
 		"zoom": "Zoom",
 		"walk": "Walk navigation",
+		"androidorbit": "1 finger: orbit",
+		"androidpan": "2 fingers: pan",
+		"androidzoom": "Pinch: zoom",
+		"androidwalk": "Use the joystick",
 		"forward": "Forward",
 		"left": "Left",
 		"back": "Back",
@@ -252,6 +256,14 @@
 			"clearselection": "Clear selection",
 			"ignoreselection": "Ignore selection"
 		}
+	},
+	"viewtoolbar/": {
+		"select": "Select",
+		"move": "Move",
+		"rotate": "Rotate",
+		"scale": "Scale",
+		"bend": "Bend",
+		"transform": "Transform"
 	},
 	"startup/": {
 		"trial": "TRIAL",
@@ -321,9 +333,14 @@
 		"download": "Download",
 		"view": "View",
 		"rendersaved": "Render settings saved successfully!",
-		"close": "Close"
+		"close": "Close",
+		"updateavailable": "Version %1 is available!",
+		"updatedownload": "Update",
+		"updatedownloading": "Downloading update..."
 	},
 	"error/": {
+		"updateinstall": "Could not open the installer for the downloaded update.",
+		"updatedownload": "Could not download the update. Check your internet connection.",
 		"loadassets": "The Minecraft assets could not be loaded. Try re-installing Mine-imator. See the log for details.",
 		"loadassetscaption": "Load assets error",
 		"newprojectaccess": "The project could not be saved in this location. Try another folder by clicking \"Change\".",
@@ -622,7 +639,7 @@
 			"second": "%1 second",
 			"seconds": "%1 seconds"
 		},
-		"stop": "Hold Escape to cancel",
+		"stop": "Cancel",
 		"loading": "%1% done",
 		"movie/": {
 			"title": "Exporting your movie...",

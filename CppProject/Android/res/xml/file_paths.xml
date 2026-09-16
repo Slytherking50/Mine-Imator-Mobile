@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Auto-update (2026-09-15) - exposes only the "updates/" subfolder of the app's own internal
+	files dir (Context.getFilesDir(), what QDir::homePath() resolves to on Android -
+	user_directory_get() in UtilFunc.cpp, same base directory as log.txt/Projects/ - confirmed
+	via `run-as` all session) as a content:// URI the package installer can read the
+	downloaded APK from. Nothing else under that directory is exposed.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+	<files-path name="updates" path="updates/"/>
+</paths>

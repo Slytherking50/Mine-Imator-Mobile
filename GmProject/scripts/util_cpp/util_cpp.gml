@@ -35,6 +35,93 @@ function interface_scale_set(factor)
 {
 }
 
+/// CppSeparate void keyboard_virtual_show()
+/// Shows the on-screen keyboard (Android only, no-op elsewhere - KNOWN_ISSUES.md B20).
+function keyboard_virtual_show()
+{
+}
+
+/// CppSeparate void keyboard_virtual_hide()
+/// Hides the on-screen keyboard (Android only, no-op elsewhere - KNOWN_ISSUES.md B20).
+function keyboard_virtual_hide()
+{
+}
+
+/// CppSeparate void keyboard_field_set(RealType, RealType, RealType, RealType)
+/// Reports the on-screen rect (x, y, width, height) of the GML text field currently being
+/// edited, so the Android on-screen keyboard can position/scroll around it. No-op elsewhere.
+function keyboard_field_set(x, y, w, h)
+{
+}
+
+/// CppSeparate BoolType android_install_apk(StringType)
+/// Launches Android's package installer for a downloaded APK at the given local path
+/// (auto-update, 2026-09-15 - app_event_http.gml's http_download_update branch). Always
+/// false on non-Android platforms - this codepath never runs there, no desktop auto-update
+/// exists yet. Chosen over declaring this in CppGen/gml.json (GATE G3 - "contrato entre dos
+/// capas", needs human sign-off) because this marker is an already-established, ungated
+/// mechanism for exactly this shape of function (71 other files already use it, e.g.
+/// touch_count()/user_directory_get() right below/above this one).
+function android_install_apk(path)
+{
+	return false
+}
+
+/// CppSeparate IntType touch_count()
+/// Number of simultaneous touch points currently down (Android only; always 0 elsewhere) -
+/// KNOWN_ISSUES.md B10/Trampa 1, Fase 4 pinch/pan gestures.
+function touch_count()
+{
+	return 0
+}
+
+/// CppSeparate RealType touch_pinch_delta()
+/// Change (in logical pixels) in the distance between the first two touch points since the
+/// last frame - positive spreading apart, negative pinching together. Android only, 0
+/// elsewhere.
+function touch_pinch_delta()
+{
+	return 0
+}
+
+/// CppSeparate RealType touch_pan_dx()
+/// Change (in logical pixels) in the midpoint between the first two touch points since the
+/// last frame, X axis. Android only, 0 elsewhere.
+function touch_pan_dx()
+{
+	return 0
+}
+
+/// CppSeparate RealType touch_pan_dy()
+/// Same as touch_pan_dx(), Y axis.
+function touch_pan_dy()
+{
+	return 0
+}
+
+/// CppSeparate BoolType touch_point_active(IntType)
+/// Whether raw touch slot 0 or 1 currently has a finger down (Android only; always false
+/// elsewhere) - lets GML tell fingers apart across frames for gestures needing two
+/// independent things at once (virtual joystick + simultaneous look).
+function touch_point_active(slot)
+{
+	return false
+}
+
+/// CppSeparate RealType touch_point_x(IntType)
+/// Logical-pixel X position of touch slot 0 or 1 (Android only; 0 elsewhere).
+function touch_point_x(slot)
+{
+	return 0
+}
+
+/// CppSeparate RealType touch_point_y(IntType)
+/// Same as touch_point_x(), Y axis.
+function touch_point_y(slot)
+{
+	return 0
+}
+
 /// CppSeparate StringType user_directory_get()
 /// Returns the location where user generated files are written (log, key, settings, projects).
 /// On Windows this is the Data folder in the installation, on Unix this is ~/Mine-imator
