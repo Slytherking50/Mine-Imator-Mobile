@@ -482,6 +482,7 @@
 	"toastexportexternalfail": "Could not export the project - some files may be missing",
 	"toastimportexternalsuccess": "Project imported",
 	"toastimportexternalnoproject": "Files were copied, but no .miproject file was found",
+	"toastsharelogfail": "Could not open the share menu for log.txt",
 	"importexternalname": "Imported project",
 	"toolbar/": {
 		"file": "File",
