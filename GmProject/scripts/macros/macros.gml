@@ -119,7 +119,7 @@ function macros()
 	// the "v" prefix consistent with the tag names actually used (GitHub's own convention,
 	// e.g. "v0.0.1") - app_event_http.gml compares them as plain strings, not parsed semver.
 	#macro link_update_check			"https://api.github.com/repos/Slytherking50/Mine-Imator-Mobile/releases/latest"
-	#macro android_app_version			"v0.0.4"
+	#macro android_app_version			"v0.0.5"
 	#macro link_forums_upload			"https://www.mineimatorforums.com/index.php?/topic/10-guide-how-to-post-a-mine-imator-project/"
 	#macro link_minecraft				"https://www.minecraft.net"
 	#macro link_david					"https://www.stuffbydavid.com"

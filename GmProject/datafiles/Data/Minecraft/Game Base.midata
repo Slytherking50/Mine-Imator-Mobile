@@ -1,0 +1,87 @@
+{
+	"version": "Game Base",
+	"patch": 0,
+	"format": 9,
+	"characters": [
+		{
+			"name": "human",
+			"version": 0,
+			"states": {
+				"type": [
+					"placeholder"
+				],
+				"variant": [
+					"placeholder"
+				]
+			},
+			"default_state": "type=placeholder,variant=placeholder"
+		}
+	],
+	"special_blocks": [
+		{
+			"name": "chest",
+			"states": {
+				"variant": [
+					"placeholder"
+				]
+			},
+			"default_state": "variant=placeholder"
+		}
+	],
+	"blocks": [
+		{
+			"name": "grass_block",
+			"states": {
+				"variant": [
+					"placeholder"
+				]
+			},
+			"default_state": "variant=placeholder",
+			"id": "minecraft:grass_block"
+		}
+	],
+	"model_textures": [],
+	"block_textures": [],
+	"block_textures_animated": [],
+	"block_textures_color": {},
+	"block_textures_preview": {},
+	"item_textures": [],
+	"particle_textures": [],
+	"particles": [],
+	"biomes": [
+		{
+			"name": "placeholder_biome_a",
+			"foliage": "#808080",
+			"water": "#808080"
+		},
+		{
+			"name": "placeholder_biome_b",
+			"foliage": "#808080",
+			"water": "#808080"
+		},
+		{
+			"name": "placeholder_biome_c",
+			"foliage": "#808080",
+			"water": "#808080"
+		}
+	],
+	"swatches": [
+		{
+			"name": "dye",
+			"note": "",
+			"colors": [
+				{
+					"name": "placeholder",
+					"value": "#808080"
+				}
+			]
+		}
+	],
+	"map_colors": [],
+	"patterns": [],
+	"sherds": {},
+	"armor": {
+		"pattern": [],
+		"material": []
+	}
+}
